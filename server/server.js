@@ -13,13 +13,14 @@ const cors    = require("cors");
 const path    = require("path");
 const { validateAgentRequestV1 } = require("../schema/AgentRequestV1");
 const AnthropicProvider = require("./providers/AnthropicProvider"); // kept for reference
-const GroqProvider      = require("./providers/GroqProvider");      // kept for reference
-const GeminiProvider    = require("./providers/GeminiProvider");
+const GroqProvider      = require("./providers/GroqProvider");      // kept for reference (vision deprecated)
+const GeminiProvider    = require("./providers/GeminiProvider");    // optional: needs GEMINI_API_KEY
+const GroqTextProvider  = require("./providers/GroqTextProvider");  // ✅ active: free, no vision key needed
 const { logMetric } = require("./utils/logger");
 
 const app  = express();
 const PORT = 3000;
-const vlmProvider = new GeminiProvider(); // ✅ Free, vision-capable (Gemini 1.5 Flash)
+const vlmProvider = new GroqTextProvider(); // Uses GROQ_API_KEY, text-only (DOM-guided)
 
 // ---------------------------------------------------------------------------
 // Middleware
