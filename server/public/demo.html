@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PII Redaction Demo</title>
+  <style>
+    body { font-family: system-ui; margin: 40px; background: #f8fafc; color: #1e293b; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+    h1 { margin-top: 0; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 500; margin-bottom: 5px; }
+    input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    .thumbnail { width: 150px; height: 150px; background: #e2e8f0 url('https://thispersondoesnotexist.com/') center/cover; border-radius: 50%; margin: 0 auto 20px; display: block; }
+    button { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="thumbnail" id="profile-pic"></div>
+    <h1>Account Setup</h1>
+    <p>Please complete your profile.</p>
+    
+    <div class="form-group">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" autocomplete="name" placeholder="John Doe">
+    </div>
+    
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" autocomplete="email" placeholder="john@example.com">
+    </div>
+    
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="new-password">
+    </div>
+    
+    <div class="form-group">
+      <label for="card">Credit Card Number</label>
+      <input type="text" id="card" autocomplete="cc-number" placeholder="0000 0000 0000 0000">
+    </div>
+
+    <button type="button" id="submit-btn">Complete Setup</button>
+  </div>
+</body>
+</html>

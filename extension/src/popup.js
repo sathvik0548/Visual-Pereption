@@ -134,13 +134,19 @@ async function renderResults(screenshotDataUrl, detections, sensitiveRegions) {
 // ---------------------------------------------------------------------------
 // Button click → port → background
 // ---------------------------------------------------------------------------
-analyzeBtn.addEventListener("click", () => {
+const demoBtn    = document.getElementById("demoBtn");
+const taskInput  = document.getElementById("taskInput");
+
+function startAnalysis(isDemo) {
   analyzeBtn.disabled = true;
+  if(demoBtn) demoBtn.disabled = true;
   resetCanvas();
-  setStatus("loading", "⏳ Connecting…");
+  setStatus("loading", isDemo ? "⏳ Starting Auto-Run Loop…" : "⏳ Connecting…");
+
+  const instruction = taskInput?.value || "Analyze the current screen and detect PII";
 
   const port = chrome.runtime.connect({ name: "analyze" });
-  port.postMessage({ type: "ANALYZE_SCREEN" });
+  port.postMessage({ type: isDemo ? "START_DEMO_RUN" : "ANALYZE_SCREEN", instruction });
 
   port.onMessage.addListener(async (msg) => {
     switch (msg.type) {
@@ -154,7 +160,6 @@ analyzeBtn.addEventListener("click", () => {
 
       case "MODEL_PROGRESS": {
         const name = msg.file?.split("/").pop() ?? "model";
-        // HuggingFace CDN sometimes omits Content-Length — show spinner, not broken %
         const pct  = (msg.total && msg.total > 0)
           ? ` ${Math.round((msg.loaded / msg.total) * 100)}%`
           : "";
@@ -169,6 +174,7 @@ analyzeBtn.addEventListener("click", () => {
       case "MODEL_ERROR":
         setStatus("error", `❌ Model error: ${msg.error}`);
         analyzeBtn.disabled = false;
+        if(demoBtn) demoBtn.disabled = false;
         break;
 
       case "ANALYSIS_RESULT": {
@@ -188,12 +194,14 @@ analyzeBtn.addEventListener("click", () => {
         renderPIITable(sensitiveRegions ?? []);
         console.log("[Popup] Sensitive regions:", sensitiveRegions);
         analyzeBtn.disabled = false;
+        if(demoBtn) demoBtn.disabled = false;
         break;
       }
 
       case "ERROR":
         setStatus("error", `❌ ${msg.error}`);
         analyzeBtn.disabled = false;
+        if(demoBtn) demoBtn.disabled = false;
         break;
     }
   });
@@ -201,5 +209,9 @@ analyzeBtn.addEventListener("click", () => {
   port.onDisconnect.addListener(() => {
     if (chrome.runtime.lastError) setStatus("error", "❌ Service worker disconnected.");
     analyzeBtn.disabled = false;
+    if(demoBtn) demoBtn.disabled = false;
   });
-});
+}
+
+analyzeBtn.addEventListener("click", () => startAnalysis(false));
+if(demoBtn) demoBtn.addEventListener("click", () => startAnalysis(true));

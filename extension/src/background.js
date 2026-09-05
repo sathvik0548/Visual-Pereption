@@ -158,118 +158,136 @@ chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "analyze") return;
 
   port.onMessage.addListener(async (message) => {
-    if (message.type !== "ANALYZE_SCREEN") return;
+    if (message.type !== "ANALYZE_SCREEN" && message.type !== "START_DEMO_RUN") return;
+    
+    const isDemo = message.type === "START_DEMO_RUN";
+    const instruction = message.instruction || "Analyze the current screen and detect PII";
+    let shouldContinue = true;
 
-    try {
-      const t0 = performance.now();
+    while (shouldContinue) {
+      try {
+        const t0 = performance.now();
 
-      // ── 1. Capture screen ─────────────────────────────────────────────
-      port.postMessage({ type: "STATUS", text: "📸 Capturing screen…" });
-      const { dataUrl, tab } = await captureScreen();
+        // ── 1. Capture screen ─────────────────────────────────────────────
+        port.postMessage({ type: "STATUS", text: "📸 Capturing screen…" });
+        const { dataUrl, tab } = await captureScreen();
 
-      // ── 2. DOM scan ───────────────────────────────────────────────────
-      port.postMessage({ type: "STATUS", text: "🔍 Scanning DOM for sensitive fields…" });
-      const { domRegions, domHash } = await getDOMRegions(tab.id);
-      port.postMessage({ type: "DOM_SCAN_DONE", count: domRegions.length });
+        // ── 2. DOM scan ───────────────────────────────────────────────────
+        port.postMessage({ type: "STATUS", text: "🔍 Scanning DOM for sensitive fields…" });
+        const { domRegions, domHash } = await getDOMRegions(tab.id);
+        port.postMessage({ type: "DOM_SCAN_DONE", count: domRegions.length });
 
-      // ── 3. Vision + PII analysis (in offscreen) ───────────────────────
-      stats.framesCaptured++;
-      const cacheKey = tab.url + "|" + domHash;
-      
-      let detections, sensitiveRegions, screenshotDataUrl, elapsed;
-      
-      if (analysisCache.has(cacheKey)) {
-        port.postMessage({ type: "STATUS", text: "⚡ DOM identical! Skipping vision inference (Cache Hit)." });
-        const cached = analysisCache.get(cacheKey);
-        detections = cached.detections;
-        sensitiveRegions = cached.sensitiveRegions;
-        screenshotDataUrl = dataUrl;
-        elapsed = 0;
-      } else {
-        port.postMessage({
-          type: "STATUS",
-          text: `🧠 Running Florence-2 + BlazeFace + PII analysis…`,
-        });
+        // ── 3. Vision + PII analysis (in offscreen) ───────────────────────
+        stats.framesCaptured++;
+        const cacheKey = tab.url + "|" + domHash;
         
-        stats.visionInferences++;
-        const result = await runVisionAnalysis(dataUrl, domRegions);
-        detections = result.detections;
-        sensitiveRegions = result.sensitiveRegions;
-        screenshotDataUrl = result.screenshotDataUrl;
-        elapsed = result.elapsed;
+        let detections, sensitiveRegions, screenshotDataUrl, elapsed;
         
-        analysisCache.set(cacheKey, { detections, sensitiveRegions });
-      }
-
-      // ── 4. Log combined results ───────────────────────────────────────
-      console.log(
-        `[BG] Analysis complete in ${elapsed} ms.`,
-        `\nVision detections: ${detections.length}`,
-        `\nSensitive regions: ${sensitiveRegions.length}`,
-      );
-
-      // ── 5. Redact Image & POST to server ──────────────────────────────
-      port.postMessage({ type: "STATUS", text: `🛡️ Redacting sensitive regions...` });
-      const finalScreenshotDataUrl = await redactScreenshot(screenshotDataUrl, sensitiveRegions);
-
-      const manifest = (sensitiveRegions || []).map((r, i) => ({
-        region_id: `region_${i}`,
-        bbox: r.bbox,
-        type: r.type,
-        redaction_style: "black_box",
-        confidence: r.confidence
-      }));
-
-      const dom_summary = (domRegions || []).map((r, i) => ({
-        element_id: `elem_${i}`,
-        tag: "input", 
-        role: "textbox",
-        bbox: r.bbox
-      }));
-
-      const agentRequestPayload = {
-        version: "1.0",
-        task_instruction: "Analyze the current screen and detect PII",
-        redacted_image: finalScreenshotDataUrl.split(",")[1],
-        manifest,
-        dom_summary
-      };
-
-      const serverResult = await sendToServer(agentRequestPayload);
-
-      // ── 5b. Forward Action to Content Script ────────────────────────
-      let executionStatus = { ok: true, message: "No action returned" };
-      if (serverResult && serverResult.action && serverResult.action !== "done") {
-        port.postMessage({ type: "STATUS", text: `⚡ Executing action: ${serverResult.action} on ${serverResult.target_id}...` });
-        
-        executionStatus = await new Promise(resolve => {
-          chrome.tabs.sendMessage(tab.id, { type: "EXECUTE_ACTION", payload: serverResult }, response => {
-            if (chrome.runtime.lastError) resolve({ ok: false, error: chrome.runtime.lastError.message });
-            else resolve(response || { ok: false, error: "No response from content script" });
+        if (analysisCache.has(cacheKey)) {
+          port.postMessage({ type: "STATUS", text: "⚡ DOM identical! Skipping vision inference (Cache Hit)." });
+          const cached = analysisCache.get(cacheKey);
+          detections = cached.detections;
+          sensitiveRegions = cached.sensitiveRegions;
+          screenshotDataUrl = dataUrl;
+          elapsed = 0;
+        } else {
+          port.postMessage({
+            type: "STATUS",
+            text: `🧠 Running Florence-2 + BlazeFace + PII analysis…`,
           });
-        });
-        console.log("[BG] Execution status:", executionStatus);
-      }
+          
+          stats.visionInferences++;
+          const result = await runVisionAnalysis(dataUrl, domRegions);
+          detections = result.detections;
+          sensitiveRegions = result.sensitiveRegions;
+          screenshotDataUrl = result.screenshotDataUrl;
+          elapsed = result.elapsed;
+          
+          analysisCache.set(cacheKey, { detections, sensitiveRegions });
+        }
 
-      // ── 6. Send everything to popup ───────────────────────────────────
-      port.postMessage({
-        type: "ANALYSIS_RESULT",
-        detections,
-        sensitiveRegions,
-        screenshotDataUrl,
-        elapsed,
-        serverResult,
-      });
-      
-      const tEnd = performance.now();
-      stats.totalLatencyMs += (tEnd - t0);
-      chrome.tabs.sendMessage(tab.id, { type: "UPDATE_STATS", payload: stats }, () => {
-        // ignore errors if content script closed
-        chrome.runtime.lastError;
-      });
-    } catch (err) {
-      console.error("[BG] Analysis failed:", err);
-      port.postMessage({ type: "ERROR", error: err.message });
+        // ── 4. Log combined results ───────────────────────────────────────
+        console.log(
+          `[BG] Analysis complete in ${elapsed} ms.`,
+          `\nVision detections: ${detections.length}`,
+          `\nSensitive regions: ${sensitiveRegions.length}`,
+        );
+
+        // ── 5. Redact Image & POST to server ──────────────────────────────
+        port.postMessage({ type: "STATUS", text: `🛡️ Redacting sensitive regions...` });
+        const finalScreenshotDataUrl = await redactScreenshot(screenshotDataUrl, sensitiveRegions);
+
+        const manifest = (sensitiveRegions || []).map((r, i) => ({
+          region_id: `region_${i}`,
+          bbox: r.bbox,
+          type: r.type,
+          redaction_style: "black_box",
+          confidence: r.confidence
+        }));
+
+        const dom_summary = (domRegions || []).map((r, i) => ({
+          element_id: `elem_${i}`,
+          tag: "input", 
+          role: "textbox",
+          bbox: r.bbox
+        }));
+
+        const agentRequestPayload = {
+          version: "1.0",
+          task_instruction: instruction,
+          redacted_image: finalScreenshotDataUrl.split(",")[1],
+          manifest,
+          dom_summary,
+          demo_mode: isDemo,
+          client_stats: { totalLatencyMs: stats.totalLatencyMs }
+        };
+
+        const serverResult = await sendToServer(agentRequestPayload);
+
+        // ── 5b. Forward Action to Content Script ────────────────────────
+        let executionStatus = { ok: true, message: "No action returned" };
+        if (serverResult && serverResult.action && serverResult.action !== "done") {
+          port.postMessage({ type: "STATUS", text: `⚡ Executing action: ${serverResult.action} on ${serverResult.target_id}...` });
+          
+          executionStatus = await new Promise(resolve => {
+            chrome.tabs.sendMessage(tab.id, { type: "EXECUTE_ACTION", payload: serverResult }, response => {
+              if (chrome.runtime.lastError) resolve({ ok: false, error: chrome.runtime.lastError.message });
+              else resolve(response || { ok: false, error: "No response from content script" });
+            });
+          });
+          console.log("[BG] Execution status:", executionStatus);
+        }
+
+        // ── 6. Send everything to popup ───────────────────────────────────
+        port.postMessage({
+          type: "ANALYSIS_RESULT",
+          detections,
+          sensitiveRegions,
+          screenshotDataUrl,
+          elapsed,
+          serverResult,
+        });
+        
+        const tEnd = performance.now();
+        stats.totalLatencyMs += (tEnd - t0);
+        chrome.tabs.sendMessage(tab.id, { type: "UPDATE_STATS", payload: stats }, () => {
+          // ignore errors if content script closed
+          chrome.runtime.lastError;
+        });
+
+        // ── Loop check for Demo mode ─────────────────────────────────────
+        if (isDemo && serverResult && serverResult.action !== "done" && executionStatus.ok) {
+          port.postMessage({ type: "STATUS", text: "🔄 Demo Mode: Waiting 1s before next cycle..." });
+          await new Promise(r => setTimeout(r, 1000));
+        } else {
+          shouldContinue = false;
+        }
+
+      } catch (err) {
+        console.error("[BG] Analysis failed:", err);
+        port.postMessage({ type: "ERROR", error: err.message });
+        shouldContinue = false;
+      }
     }
   });
 

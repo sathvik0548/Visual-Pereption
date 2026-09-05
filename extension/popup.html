@@ -110,7 +110,13 @@
       </div>
     </header>
 
-    <button id="analyzeBtn">Analyze Screen</button>
+    <div style="margin-bottom: 10px;">
+      <input type="text" id="taskInput" placeholder="Task instruction (e.g. fill out signup form)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #333; background: #1a1a2e; color: #fff; font-size: 12px; margin-bottom: 6px;">
+      <div style="display: flex; gap: 8px;">
+        <button id="analyzeBtn" style="flex: 1;">Analyze</button>
+        <button id="demoBtn" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); padding: 10px 0; border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;">Start Demo Run</button>
+      </div>
+    </div>
 
     <div id="status" class="idle"></div>
 
