@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Offscreen — Browser Agent</title>
+  <!--
+    This page is invisible to the user. Its only purpose is to host the
+    Florence-2 ONNX model (which requires WebGPU / DOM APIs unavailable
+    in a service worker).
+
+    Loaded by background.js via chrome.offscreen.createDocument().
+    Script type="module" is required because offscreen.js is an ES module bundle.
+  -->
+</head>
+<body>
+  <script type="module" src="offscreen.js"></script>
+</body>
+</html>

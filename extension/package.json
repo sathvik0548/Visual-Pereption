@@ -1,0 +1,20 @@
+{
+  "name": "browser-agent-extension",
+  "version": "0.2.0",
+  "description": "Privacy-preserving browser agent extension with local Florence-2 visual perception.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.1.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.22.0",
+    "@tensorflow/tfjs-backend-webgpu": "^4.22.0",
+    "@tensorflow-models/blazeface": "^0.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

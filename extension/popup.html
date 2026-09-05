@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browser Agent</title>
+    <style>
+      /* ── Reset ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        width: 420px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0f0f13;
+        color: #e2e2e9;
+        padding: 16px;
+      }
+
+      /* ── Header ── */
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .logo {
+        width: 34px; height: 34px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #6c63ff, #a78bfa);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; flex-shrink: 0;
+      }
+      header h1  { font-size: 14px; font-weight: 700; color: #fff; }
+      header p   { font-size: 11px; color: #6b6b85; margin-top: 2px; }
+
+      /* ── Analyze button ── */
+      #analyzeBtn {
+        width: 100%;
+        padding: 10px 0;
+        border: none; border-radius: 10px;
+        background: linear-gradient(135deg, #6c63ff, #a78bfa);
+        color: #fff; font-size: 14px; font-weight: 700;
+        cursor: pointer; letter-spacing: 0.2px;
+        transition: opacity 0.2s, transform 0.1s;
+      }
+      #analyzeBtn:hover:not(:disabled)  { opacity: 0.87; transform: translateY(-1px); }
+      #analyzeBtn:active:not(:disabled) { transform: translateY(0); }
+      #analyzeBtn:disabled              { opacity: 0.45; cursor: not-allowed; }
+
+      /* ── Status bar ── */
+      #status {
+        margin-top: 10px;
+        min-height: 0;
+        padding: 0;
+        font-size: 12px; line-height: 1.5;
+        display: none;
+        border-radius: 7px;
+        word-break: break-word;
+      }
+      #status.loading { display: block; padding: 8px 10px; background: #1a1a2e; color: #a78bfa; }
+      #status.success { display: block; padding: 8px 10px; background: #0d1f14; color: #4ade80; }
+      #status.error   { display: block; padding: 8px 10px; background: #1f0d0d; color: #f87171; }
+
+      /* ── Canvas wrapper ── */
+      #canvasWrap {
+        display: none;
+        margin-top: 12px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #2a2a3a;
+        position: relative;
+      }
+      #debugCanvas {
+        width: 100%;
+        display: block;
+      }
+
+      /* ── PII breakdown table ── */
+      #piiTable {
+        display: none;
+        margin-top: 8px;
+        background: #0f0f1c;
+        border: 1px solid #2a2a3a;
+        border-radius: 7px;
+        overflow: hidden;
+      }
+
+      /* ── Legend ── */
+      #legend {
+        display: none;
+        margin-top: 8px;
+        gap: 14px;
+        font-size: 11px;
+        color: #8888a8;
+      }
+      .legend-item { display: flex; align-items: center; gap: 5px; }
+      .swatch {
+        width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0;
+      }
+      .swatch.region { background: #22c55e; }
+      .swatch.text   { background: #60a5fa; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">🤖</div>
+      <div>
+        <h1>Browser Agent</h1>
+        <p>Florence-2 · Local WebGPU · Privacy-Preserving</p>
+      </div>
+    </header>
+
+    <button id="analyzeBtn">Analyze Screen</button>
+
+    <div id="status" class="idle"></div>
+
+    <!-- Debug canvas: screenshot + detection overlays -->
+    <div id="canvasWrap">
+      <canvas id="debugCanvas"></canvas>
+    </div>
+
+    <!-- PII breakdown table -->
+    <div id="piiTable"></div>
+
+    <!-- Colour legend -->
+    <div id="legend">
+      <div class="legend-item"><div class="swatch region"></div><span>OD</span></div>
+      <div class="legend-item"><div class="swatch text"></div><span>OCR</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#ef4444"></div><span>PASS</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#f97316"></div><span>EMAIL</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#eab308"></div><span>PHONE</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#ec4899"></div><span>CARD</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#06b6d4"></div><span>FACE</span></div>
+    </div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
