@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "groq-sdk": "^1.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

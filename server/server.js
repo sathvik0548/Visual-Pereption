@@ -10,13 +10,16 @@
 require("dotenv").config();
 const express = require("express");
 const cors    = require("cors");
+const path    = require("path");
 const { validateAgentRequestV1 } = require("../schema/AgentRequestV1");
-const AnthropicProvider = require("./providers/AnthropicProvider");
+const AnthropicProvider = require("./providers/AnthropicProvider"); // kept for reference
+const GroqProvider      = require("./providers/GroqProvider");      // kept for reference
+const GeminiProvider    = require("./providers/GeminiProvider");
 const { logMetric } = require("./utils/logger");
 
 const app  = express();
 const PORT = 3000;
-const vlmProvider = new AnthropicProvider();
+const vlmProvider = new GeminiProvider(); // ✅ Free, vision-capable (Gemini 1.5 Flash)
 
 // ---------------------------------------------------------------------------
 // Middleware
@@ -39,7 +42,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "20mb" })); // screenshots can be large
-app.use(express.static("public")); // Serve demo HTML
+app.use(express.static(path.join(__dirname, "public"))); // Serve demo HTML — absolute path
 
 let demoMetrics = {
   runs: 0,
