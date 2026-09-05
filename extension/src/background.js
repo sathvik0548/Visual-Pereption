@@ -10,6 +10,13 @@
 const SERVER_URL    = "http://localhost:3000/analyze";
 const OFFSCREEN_URL = chrome.runtime.getURL("offscreen.html");
 
+const analysisCache = new Map();
+let stats = {
+  framesCaptured: 0,
+  visionInferences: 0,
+  totalLatencyMs: 0
+};
+
 // ---------------------------------------------------------------------------
 // captureScreen — capture the active tab's visible area as a data URL
 // ---------------------------------------------------------------------------
@@ -30,12 +37,10 @@ async function getDOMRegions(tabId) {
       if (chrome.runtime.lastError || !response) {
         // Content script not injected (e.g. on chrome:// pages) — not an error
         console.warn("[BG] DOM scan skipped:", chrome.runtime.lastError?.message ?? "no response");
-        resolve([]);
+        resolve({ domRegions: [], domHash: "" });
         return;
       }
-      const regions = response.domRegions ?? [];
-      console.log(`[BG] DOM scan: ${regions.length} sensitive field(s).`);
-      resolve(regions);
+      resolve({ domRegions: response.domRegions ?? [], domHash: response.domHash ?? "" });
     });
   });
 }
@@ -56,6 +61,50 @@ async function ensureOffscreenDocument() {
     justification: "Run Florence-2 + BlazeFace inference for visual PII detection.",
   });
   console.log("[BG] Offscreen document created.");
+}
+
+// ---------------------------------------------------------------------------
+// redactScreenshot — physically draw black boxes over sensitive regions
+// ---------------------------------------------------------------------------
+async function redactScreenshot(dataUrl, sensitiveRegions) {
+  if (!sensitiveRegions || sensitiveRegions.length === 0) return dataUrl;
+
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d");
+    
+    // Draw original image
+    ctx.drawImage(bitmap, 0, 0);
+    
+    // Draw redaction boxes
+    ctx.fillStyle = "black";
+    for (const region of sensitiveRegions) {
+      if (region.bbox && region.bbox.length === 4) {
+        const [x, y, w, h] = region.bbox;
+        ctx.fillRect(x, y, w, h);
+      }
+    }
+    
+    const outBlob = await canvas.convertToBlob({ type: "image/png" });
+    const buffer = await outBlob.arrayBuffer();
+    
+    // Convert to base64
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const b64 = btoa(binary);
+    
+    return `data:image/png;base64,${b64}`;
+  } catch (err) {
+    console.error("[BG] Redaction failed:", err);
+    return dataUrl; // fallback to original on error
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -112,27 +161,45 @@ chrome.runtime.onConnect.addListener((port) => {
     if (message.type !== "ANALYZE_SCREEN") return;
 
     try {
+      const t0 = performance.now();
+
       // ── 1. Capture screen ─────────────────────────────────────────────
       port.postMessage({ type: "STATUS", text: "📸 Capturing screen…" });
       const { dataUrl, tab } = await captureScreen();
 
       // ── 2. DOM scan ───────────────────────────────────────────────────
       port.postMessage({ type: "STATUS", text: "🔍 Scanning DOM for sensitive fields…" });
-      const domRegions = await getDOMRegions(tab.id);
+      const { domRegions, domHash } = await getDOMRegions(tab.id);
       port.postMessage({ type: "DOM_SCAN_DONE", count: domRegions.length });
 
       // ── 3. Vision + PII analysis (in offscreen) ───────────────────────
-      port.postMessage({
-        type: "STATUS",
-        text: `🧠 Running Florence-2 + BlazeFace + PII analysis…`,
-      });
-
-      const {
-        detections,
-        sensitiveRegions,
-        screenshotDataUrl,
-        elapsed,
-      } = await runVisionAnalysis(dataUrl, domRegions);
+      stats.framesCaptured++;
+      const cacheKey = tab.url + "|" + domHash;
+      
+      let detections, sensitiveRegions, screenshotDataUrl, elapsed;
+      
+      if (analysisCache.has(cacheKey)) {
+        port.postMessage({ type: "STATUS", text: "⚡ DOM identical! Skipping vision inference (Cache Hit)." });
+        const cached = analysisCache.get(cacheKey);
+        detections = cached.detections;
+        sensitiveRegions = cached.sensitiveRegions;
+        screenshotDataUrl = dataUrl;
+        elapsed = 0;
+      } else {
+        port.postMessage({
+          type: "STATUS",
+          text: `🧠 Running Florence-2 + BlazeFace + PII analysis…`,
+        });
+        
+        stats.visionInferences++;
+        const result = await runVisionAnalysis(dataUrl, domRegions);
+        detections = result.detections;
+        sensitiveRegions = result.sensitiveRegions;
+        screenshotDataUrl = result.screenshotDataUrl;
+        elapsed = result.elapsed;
+        
+        analysisCache.set(cacheKey, { detections, sensitiveRegions });
+      }
 
       // ── 4. Log combined results ───────────────────────────────────────
       console.log(
@@ -141,12 +208,15 @@ chrome.runtime.onConnect.addListener((port) => {
         `\nSensitive regions: ${sensitiveRegions.length}`,
       );
 
-      // ── 5. POST to server (optional, best-effort) ─────────────────────
+      // ── 5. Redact Image & POST to server ──────────────────────────────
+      port.postMessage({ type: "STATUS", text: `🛡️ Redacting sensitive regions...` });
+      const finalScreenshotDataUrl = await redactScreenshot(screenshotDataUrl, sensitiveRegions);
+
       const manifest = (sensitiveRegions || []).map((r, i) => ({
         region_id: `region_${i}`,
         bbox: r.bbox,
         type: r.type,
-        redaction_style: "black_box", // Placeholder until physical redaction is fully implemented
+        redaction_style: "black_box",
         confidence: r.confidence
       }));
 
@@ -159,8 +229,8 @@ chrome.runtime.onConnect.addListener((port) => {
 
       const agentRequestPayload = {
         version: "1.0",
-        task_instruction: "Analyze the current screen and detect PII", // Default placeholder task
-        redacted_image: dataUrl.split(",")[1], // Using raw screenshot until physical redaction is implemented
+        task_instruction: "Analyze the current screen and detect PII",
+        redacted_image: finalScreenshotDataUrl.split(",")[1],
         manifest,
         dom_summary
       };
@@ -189,6 +259,13 @@ chrome.runtime.onConnect.addListener((port) => {
         screenshotDataUrl,
         elapsed,
         serverResult,
+      });
+      
+      const tEnd = performance.now();
+      stats.totalLatencyMs += (tEnd - t0);
+      chrome.tabs.sendMessage(tab.id, { type: "UPDATE_STATS", payload: stats }, () => {
+        // ignore errors if content script closed
+        chrome.runtime.lastError;
       });
     } catch (err) {
       console.error("[BG] Analysis failed:", err);

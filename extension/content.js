@@ -95,6 +95,19 @@ function scanDOM() {
   return results;
 }
 
+function computeDOMHash() {
+  const text = document.body.innerText || "";
+  const inputs = Array.from(document.querySelectorAll("input, button, textarea, select"))
+                      .map(e => (e.id || "") + (e.name || "") + (e.value || "")).join("|");
+  const raw = text + inputs;
+  
+  let hash = 5381;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) + hash) + raw.charCodeAt(i);
+  }
+  return hash.toString();
+}
+
 // ---------------------------------------------------------------------------
 // UI Helpers & Execution Logic
 // ---------------------------------------------------------------------------
@@ -256,9 +269,31 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // ── DOM scan request from background.js ────────────────────────────────
   if (message.type === "SCAN_DOM") {
     const domRegions = scanDOM();
-    console.log(\`[Content] DOM scan: \${domRegions.length} sensitive field(s) found.\`);
-    sendResponse({ domRegions });
+    const domHash = computeDOMHash();
+    console.log(`[Content] DOM scan: ${domRegions.length} sensitive field(s) found. Hash: ${domHash}`);
+    sendResponse({ domRegions, domHash });
     return; // synchronous response — no need to return true
+  }
+
+  // ── Stats update from background.js ────────────────────────────────────
+  if (message.type === "UPDATE_STATS") {
+    let panel = document.getElementById("agent-log-panel");
+    if (!panel) return;
+    let statsEl = document.getElementById("agent-stats-header");
+    if (!statsEl) {
+      statsEl = document.createElement("div");
+      statsEl.id = "agent-stats-header";
+      statsEl.style.borderBottom = "1px solid #334155";
+      statsEl.style.paddingBottom = "8px";
+      statsEl.style.marginBottom = "8px";
+      statsEl.style.color = "#cbd5e1";
+      statsEl.style.fontWeight = "bold";
+      panel.insertBefore(statsEl, panel.firstChild);
+    }
+    const s = message.payload;
+    const avg = s.framesCaptured > 0 ? (s.totalLatencyMs / s.framesCaptured).toFixed(0) : 0;
+    statsEl.innerHTML = `🏁 ${s.framesCaptured} frames | 👁️ ${s.visionInferences} full visions | ⏱️ Avg latency: ${avg}ms`;
+    return;
   }
 
   // ── Execute action (future VLM-driven actions) ─────────────────────────
