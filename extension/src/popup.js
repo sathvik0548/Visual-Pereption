@@ -32,6 +32,9 @@ function resetCanvas() {
   legendEl.style.display   = "none";
   piiTable.style.display   = "none";
   piiTable.innerHTML       = "";
+  
+  const progressWrap = document.getElementById("modelLoadWrap");
+  if (progressWrap) progressWrap.style.display = "none";
 }
 
 // ---------------------------------------------------------------------------
@@ -159,17 +162,32 @@ function startAnalysis(isDemo) {
         break;
 
       case "MODEL_PROGRESS": {
+        const progressWrap = document.getElementById("modelLoadWrap");
+        const fileEl       = document.getElementById("modelLoadFile");
+        const pctEl        = document.getElementById("modelLoadPct");
+        const progEl       = document.getElementById("modelLoadProgress");
+        
+        if (progressWrap) progressWrap.style.display = "block";
+        statusEl.style.display = "none";
+        
         const name = msg.file?.split("/").pop() ?? "model";
-        const pct  = (msg.total && msg.total > 0)
-          ? ` ${Math.round((msg.loaded / msg.total) * 100)}%`
-          : "";
-        setStatus("loading", `⬇ Downloading ${name}…${pct}`);
+        if (fileEl) fileEl.textContent = `Downloading ${name}...`;
+        if (pctEl)  pctEl.textContent  = `${msg.percent}%`;
+        if (progEl) progEl.value       = msg.percent;
         break;
       }
 
-      case "MODEL_READY":
-        setStatus("loading", "✅ Model loaded — running inference…");
+      case "MODEL_READY": {
+        const progressWrap = document.getElementById("modelLoadWrap");
+        if (progressWrap) progressWrap.style.display = "none";
+        
+        if (msg.cached) {
+          setStatus("loading", "⚡ Model already in memory — running inference…");
+        } else {
+          setStatus("loading", "✅ Model loaded — running inference…");
+        }
         break;
+      }
 
       case "MODEL_ERROR":
         setStatus("error", `❌ Model error: ${msg.error}`);

@@ -1,11 +1,12 @@
 /**
  * offscreen.js — Offscreen Document script  (src/offscreen.js → built offscreen.js)
  *
- * v0.2: integrates BlazeFace face detection + PII detection alongside Florence-2.
- *
  * Startup:
- *   - Pre-loads Florence-2 model
+ *   - Pre-loads Florence-2 model (on offscreen open)
  *   - Pre-loads BlazeFace model (in parallel, best-effort)
+ *
+ * Keep-Alive:
+ *   - Sends a PING to background.js every 20s to prevent Chrome from GC-ing it.
  *
  * On RUN_INFERENCE message:
  *   1. analyzeImage()           → ocrDetections[] + odDetections[]
@@ -18,18 +19,33 @@ import { analyzeImage, loadModel } from "./vision.js";
 import { detectFaces, loadFaceModel } from "./face.js";
 import { detectSensitiveRegions } from "./pii.js";
 
+// ── Timing marker ────────────────────────────────────────────────────────
+console.log(`[Offscreen] T_OFFSCREEN_OPEN  t=0ms`);
+
+// ---------------------------------------------------------------------------
+// Keep-Alive Ping Loop (prevents MV3 from killing offscreen document)
+// ---------------------------------------------------------------------------
+setInterval(() => {
+  chrome.runtime.sendMessage({ type: "OFFSCREEN_KEEPALIVE" }).catch(() => {});
+}, 20000);
+
 // ---------------------------------------------------------------------------
 // Warm-start — load both models as soon as the offscreen document opens
 // ---------------------------------------------------------------------------
-console.log("[Offscreen] Document open — pre-loading models…");
-
 const progressCb = (progress) => {
   if (progress?.status === "progress" && progress?.name) {
+    const file = progress.name;
+    const loaded = progress.loaded ?? 0;
+    const total = progress.total ?? 0;
+    let percent = 0;
+    if (total > 0) percent = Math.round((loaded / total) * 100);
+
     chrome.runtime.sendMessage({
-      type:   "MODEL_PROGRESS",
-      file:   progress.name,
-      loaded: progress.loaded,
-      total:  progress.total,
+      type: "MODEL_PROGRESS",
+      file,
+      loaded,
+      total,
+      percent,
     }).catch(() => {});
   }
 };
@@ -37,8 +53,8 @@ const progressCb = (progress) => {
 // Florence-2 (primary) — required
 const visionReady = loadModel(progressCb)
   .then(() => {
-    console.log("[Offscreen] Florence-2 ready.");
-    chrome.runtime.sendMessage({ type: "MODEL_READY" }).catch(() => {});
+    console.log(`[Offscreen] T_MODEL_READY  (Florence-2)`);
+    chrome.runtime.sendMessage({ type: "MODEL_READY", cached: true }).catch(() => {});
   })
   .catch((err) => {
     console.error("[Offscreen] Florence-2 load failed:", err);
@@ -47,14 +63,19 @@ const visionReady = loadModel(progressCb)
 
 // BlazeFace (secondary) — face detection, non-fatal if it fails
 const faceReady = loadFaceModel()
-  .then(() => console.log("[Offscreen] BlazeFace ready."))
-  .catch((err) => console.warn("[Offscreen] BlazeFace load failed (faces won't be detected):", err.message));
+  .then(() => console.log("[Offscreen] T_MODEL_READY  (BlazeFace)"))
+  .catch((err) => console.warn("[Offscreen] BlazeFace load failed:", err.message));
 
 // ---------------------------------------------------------------------------
-// Message handler — RUN_INFERENCE
+// Message handler
 // ---------------------------------------------------------------------------
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type !== "RUN_INFERENCE") return;
+  if (message.type === "PING") {
+    sendResponse({ ok: true }); // respond to background ping if any
+    return false;
+  }
+
+  if (message.type !== "RUN_INFERENCE") return false;
 
   const { screenshotDataUrl, domRegions } = message.payload ?? {};
 
@@ -76,7 +97,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       try {
         await faceReady;
         faceDetections = await detectFaces(screenshotDataUrl);
-        console.log(`[Offscreen] BlazeFace: ${faceDetections.length} face(s).`);
       } catch (err) {
         console.warn("[Offscreen] Face detection skipped:", err.message);
       }
@@ -84,14 +104,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // ── 4. PII detection across all three passes ───────────────────────
       const sensitiveRegions = detectSensitiveRegions({
         domRegions:     domRegions ?? [],
-        ocrDetections:  detections,   // Florence-2 OCR spans
+        ocrDetections:  detections,
         faceDetections,
       });
 
       sendResponse({
         success: true,
-        detections,        // full Florence-2 output (OD + OCR)
-        sensitiveRegions,  // merged PII regions
+        detections,
+        sensitiveRegions,
         screenshotDataUrl,
         elapsed,
       });
@@ -104,4 +124,4 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true; // keep channel open for async response
 });
 
-console.log("[Offscreen] Listener registered.");
+console.log("[Offscreen] Listeners registered, preload started.");

@@ -17,6 +17,24 @@ let stats = {
   totalLatencyMs: 0
 };
 
+console.log(`[BG] T_SW_START  t=0ms  (Service worker started)`);
+
+// ---------------------------------------------------------------------------
+// Pre-load on startup (so model is ready before user clicks anything)
+// ---------------------------------------------------------------------------
+chrome.runtime.onInstalled.addListener(() => ensureOffscreenDocument());
+chrome.runtime.onStartup.addListener(() => ensureOffscreenDocument());
+
+// ---------------------------------------------------------------------------
+// Global Keep-Alive Handler (responds to offscreen pings)
+// ---------------------------------------------------------------------------
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === "OFFSCREEN_KEEPALIVE") {
+    sendResponse({ ok: true });
+    return true;
+  }
+});
+
 // ---------------------------------------------------------------------------
 // captureScreen — capture the active tab's visible area as a data URL
 // ---------------------------------------------------------------------------
@@ -167,6 +185,7 @@ chrome.runtime.onConnect.addListener((port) => {
     while (shouldContinue) {
       try {
         const t0 = performance.now();
+        console.log(`[BG] T_FIRST_INFERENCE_START  t=0ms`);
 
         // ── 1. Capture screen ─────────────────────────────────────────────
         port.postMessage({ type: "STATUS", text: "📸 Capturing screen…" });
@@ -269,7 +288,10 @@ chrome.runtime.onConnect.addListener((port) => {
         });
         
         const tEnd = performance.now();
-        stats.totalLatencyMs += (tEnd - t0);
+        const loopLatency = tEnd - t0;
+        stats.totalLatencyMs += loopLatency;
+        console.log(`[BG] T_FIRST_INFERENCE_END  elapsed=${loopLatency.toFixed(1)}ms`);
+
         chrome.tabs.sendMessage(tab.id, { type: "UPDATE_STATS", payload: stats }, () => {
           // ignore errors if content script closed
           chrome.runtime.lastError;
@@ -300,5 +322,3 @@ chrome.runtime.onConnect.addListener((port) => {
   chrome.runtime.onMessage.addListener(relay);
   port.onDisconnect.addListener(() => chrome.runtime.onMessage.removeListener(relay));
 });
-
-console.log("[BG] Service worker started (v0.2 — PII detection).");

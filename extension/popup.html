@@ -61,6 +61,26 @@
       #status.success { display: block; padding: 8px 10px; background: #0d1f14; color: #4ade80; }
       #status.error   { display: block; padding: 8px 10px; background: #1f0d0d; color: #f87171; }
 
+      /* ── Progress Bar ── */
+      #modelLoadWrap {
+        display: none;
+        margin-top: 10px;
+        background: #1a1a2e;
+        padding: 10px;
+        border-radius: 7px;
+        border: 1px solid #2a2a3a;
+      }
+      #modelLoadWrap .label {
+        display: flex; justify-content: space-between;
+        font-size: 11px; color: #a78bfa; margin-bottom: 6px;
+      }
+      progress {
+        width: 100%; height: 6px; border: none; border-radius: 3px;
+        background: #0f0f13;
+      }
+      progress::-webkit-progress-bar { background: #0f0f13; border-radius: 3px; }
+      progress::-webkit-progress-value { background: #a78bfa; border-radius: 3px; transition: width 0.1s; }
+
       /* ── Canvas wrapper ── */
       #canvasWrap {
         display: none;
@@ -116,6 +136,14 @@
         <button id="analyzeBtn" style="flex: 1;">Analyze</button>
         <button id="demoBtn" style="flex: 1; background: linear-gradient(135deg, #10b981, #059669); padding: 10px 0; border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;">Start Demo Run</button>
       </div>
+    </div>
+
+    <div id="modelLoadWrap">
+      <div class="label">
+        <span id="modelLoadFile">Loading model...</span>
+        <span id="modelLoadPct">0%</span>
+      </div>
+      <progress id="modelLoadProgress" value="0" max="100"></progress>
     </div>
 
     <div id="status" class="idle"></div>
