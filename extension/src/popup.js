@@ -11,18 +11,46 @@
 import { PII_COLORS } from "./pii.js";
 
 const analyzeBtn = document.getElementById("analyzeBtn");
-const statusEl   = document.getElementById("status");
+const demoBtn    = document.getElementById("demoBtn");
+const taskInput  = document.getElementById("taskInput");
+const statusEl   = document.getElementById("statusText");
 const canvasWrap = document.getElementById("canvasWrap");
 const canvas     = document.getElementById("debugCanvas");
 const legendEl   = document.getElementById("legend");
 const piiTable   = document.getElementById("piiTable");
 const ctx        = canvas.getContext("2d");
 
+const STAGES = ["capture", "detect", "redact", "send", "act"];
+
 // ---------------------------------------------------------------------------
-// Status helpers
+// Pipeline & Status helpers
 // ---------------------------------------------------------------------------
-function setStatus(type, text) {
-  statusEl.className   = type;
+function setPipelineStage(activeStage) {
+  let passed = true;
+  for (const stage of STAGES) {
+    const el = document.getElementById(`stage-${stage}`);
+    if (!el) continue;
+    
+    el.className = "stage";
+    if (stage === activeStage) {
+      el.classList.add("active");
+      passed = false;
+    } else if (passed) {
+      el.classList.add("done");
+    }
+  }
+}
+
+function resetPipeline() {
+  for (const stage of STAGES) {
+    const el = document.getElementById(`stage-${stage}`);
+    if (el) el.className = "stage";
+  }
+}
+
+function setStatus(isError, text) {
+  statusEl.style.display = "block";
+  statusEl.className   = isError ? "error" : "";
   statusEl.textContent = text;
 }
 
@@ -33,9 +61,12 @@ function resetCanvas() {
   piiTable.style.display   = "none";
   piiTable.innerHTML       = "";
   
+  resetPipeline();
+  
   const progressWrap = document.getElementById("modelLoadWrap");
   if (progressWrap) progressWrap.style.display = "none";
 }
+
 
 // ---------------------------------------------------------------------------
 // Layer 1 — Florence-2 detections (faint outlines for context)
@@ -137,99 +168,12 @@ async function renderResults(screenshotDataUrl, detections, sensitiveRegions) {
 // ---------------------------------------------------------------------------
 // Button click → port → background
 // ---------------------------------------------------------------------------
-const demoBtn    = document.getElementById("demoBtn");
-const taskInput  = document.getElementById("taskInput");
 
-function startAnalysis(isDemo) {
-  analyzeBtn.disabled = true;
-  if(demoBtn) demoBtn.disabled = true;
-  resetCanvas();
-  setStatus("loading", isDemo ? "⏳ Starting Auto-Run Loop…" : "⏳ Connecting…");
+// Defined below startAnalysis
 
-  const instruction = taskInput?.value || "Analyze the current screen and detect PII";
 
-  const port = chrome.runtime.connect({ name: "analyze" });
-  port.postMessage({ type: isDemo ? "START_DEMO_RUN" : "ANALYZE_SCREEN", instruction });
+// Defined below startAnalysis
 
-  port.onMessage.addListener(async (msg) => {
-    switch (msg.type) {
-      case "STATUS":
-        setStatus("loading", msg.text);
-        break;
-
-      case "DOM_SCAN_DONE":
-        setStatus("loading", `🔍 Found ${msg.count} sensitive DOM field(s) — running models…`);
-        break;
-
-      case "MODEL_PROGRESS": {
-        const progressWrap = document.getElementById("modelLoadWrap");
-        const fileEl       = document.getElementById("modelLoadFile");
-        const pctEl        = document.getElementById("modelLoadPct");
-        const progEl       = document.getElementById("modelLoadProgress");
-        
-        if (progressWrap) progressWrap.style.display = "block";
-        statusEl.style.display = "none";
-        
-        const name = msg.file?.split("/").pop() ?? "model";
-        if (fileEl) fileEl.textContent = `Downloading ${name}...`;
-        if (pctEl)  pctEl.textContent  = `${msg.percent}%`;
-        if (progEl) progEl.value       = msg.percent;
-        break;
-      }
-
-      case "MODEL_READY": {
-        const progressWrap = document.getElementById("modelLoadWrap");
-        if (progressWrap) progressWrap.style.display = "none";
-        
-        if (msg.cached) {
-          setStatus("loading", "⚡ Model already in memory — running inference…");
-        } else {
-          setStatus("loading", "✅ Model loaded — running inference…");
-        }
-        break;
-      }
-
-      case "MODEL_ERROR":
-        setStatus("error", `❌ Model error: ${msg.error}`);
-        analyzeBtn.disabled = false;
-        if(demoBtn) demoBtn.disabled = false;
-        break;
-
-      case "ANALYSIS_RESULT": {
-        const { detections, sensitiveRegions, screenshotDataUrl, elapsed } = msg;
-        const piiCount = sensitiveRegions?.length ?? 0;
-
-        setStatus(
-          piiCount > 0 ? "error" : "success",
-          piiCount > 0
-            ? `🔒 ${piiCount} PII region(s) detected in ${elapsed} ms`
-            : `✅ No PII detected — ${elapsed} ms`
-        );
-
-        if (screenshotDataUrl) {
-          await renderResults(screenshotDataUrl, detections ?? [], sensitiveRegions ?? []);
-        }
-        renderPIITable(sensitiveRegions ?? []);
-        console.log("[Popup] Sensitive regions:", sensitiveRegions);
-        analyzeBtn.disabled = false;
-        if(demoBtn) demoBtn.disabled = false;
-        break;
-      }
-
-      case "ERROR":
-        setStatus("error", `❌ ${msg.error}`);
-        analyzeBtn.disabled = false;
-        if(demoBtn) demoBtn.disabled = false;
-        break;
-    }
-  });
-
-  port.onDisconnect.addListener(() => {
-    if (chrome.runtime.lastError) setStatus("error", "❌ Service worker disconnected.");
-    analyzeBtn.disabled = false;
-    if(demoBtn) demoBtn.disabled = false;
-  });
-}
 
 analyzeBtn.addEventListener("click", () => startAnalysis(false));
 if(demoBtn) demoBtn.addEventListener("click", () => startAnalysis(true));
