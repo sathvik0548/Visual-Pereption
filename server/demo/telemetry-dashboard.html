@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAT-V7 Mission Telemetry Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #070b14;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* Notice: Header and canvas contain no DOM telemetry values */
+    .dashboard-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+
+    .notice-tag {
+      font-size: 11px;
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    /* The canvas viewport */
+    #telemetryCanvas {
+      width: 100%;
+      max-width: 920px;
+      height: auto;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(14, 165, 233, 0.12);
+      background: #0a1120;
+    }
+
+    /* The real DOM controls separate from the canvas */
+    .control-bar {
+      width: 100%;
+      max-width: 920px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .status-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #ack-status {
+      font-size: 14px;
+      font-family: monospace;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    #ack-status.acknowledged {
+      color: #34d399;
+    }
+
+    /* The DOM button for the agent to click */
+    #ack-alert-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    #ack-alert-btn:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+
+    #ack-alert-btn:active {
+      transform: translateY(1px);
+    }
+
+    #ack-alert-btn.acknowledged {
+      background: #10b981;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="dashboard-header">
+      <div class="title">SAT-V7 Mission Control Telemetry</div>
+      <div class="notice-tag">CANVAS-ONLY RENDERING (PIXELS ONLY)</div>
+    </div>
+
+    <!-- All telemetry parameter names and numbers exist SOLELY as canvas pixels -->
+    <canvas id="telemetryCanvas" width="920" height="520"></canvas>
+
+    <!-- The only real DOM action element on the page -->
+    <div class="control-bar">
+      <div class="status-section">
+        <span class="status-label">Alert Status:</span>
+        <span id="ack-status">UNACKNOWLEDGED ALERT PENDING</span>
+      </div>
+      <button id="ack-alert-btn" onclick="handleAcknowledge()">Acknowledge Alert</button>
+    </div>
+  </div>
+
+  <script>
+    // Parse URL parameter to allow testing both < 24V and >= 24V cases
+    const urlParams = new URLSearchParams(window.location.search);
+    const batteryVoltage = parseFloat(urlParams.get("voltage")) || 21.8;
+    const orbitalVelocity = parseFloat(urlParams.get("velocity")) || 7.66;
+    const thermalReading = parseFloat(urlParams.get("thermal")) || 34.2;
+    const signalStrength = parseFloat(urlParams.get("signal")) || -88;
+
+    let isAcknowledged = false;
+
+    function drawDashboard() {
+      const canvas = document.getElementById("telemetryCanvas");
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // Clear & background
+      ctx.fillStyle = "#09101d";
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle background grid
+      ctx.strokeStyle = "rgba(30, 58, 95, 0.3)";
+      ctx.lineWidth = 1;
+      for (let x = 40; x < W; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 40; y < H; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Title header banner inside canvas
+      ctx.fillStyle = "#0f1c30";
+      ctx.fillRect(20, 20, W - 40, 50);
+      ctx.strokeStyle = "#1e3a5f";
+      ctx.strokeRect(20, 20, W - 40, 50);
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 16px 'Courier New', monospace";
+      ctx.fillText("SAT-V7 REALTIME TELEMETRY BUS  //  SYS_CLOCK: 2026-09-06T15:30:00Z", 40, 52);
+
+      // Card drawing helper
+      function drawTelemetryCard(x, y, w, h, label, value, unit, status, isAlert) {
+        ctx.fillStyle = isAlert ? "rgba(239, 68, 68, 0.08)" : "rgba(15, 28, 48, 0.8)";
+        ctx.fillRect(x, y, w, h);
+
+        ctx.strokeStyle = isAlert ? "#ef4444" : "#1e3a5f";
+        ctx.lineWidth = isAlert ? 2 : 1;
+        ctx.strokeRect(x, y, w, h);
+
+        // Parameter Name (e.g. Battery Voltage (V))
+        ctx.fillStyle = isAlert ? "#fca5a5" : "#94a3b8";
+        ctx.font = "bold 13px 'Courier New', monospace";
+        ctx.fillText(label, x + 20, y + 32);
+
+        // Parameter Value (e.g. 21.8 V)
+        ctx.fillStyle = isAlert ? "#ef4444" : "#38bdf8";
+        ctx.font = "bold 34px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillText(value, x + 20, y + 80);
+
+        // Unit
+        ctx.font = "bold 18px 'Courier New', monospace";
+        ctx.fillStyle = isAlert ? "#f87171" : "#64748b";
+        ctx.fillText(unit, x + 20 + ctx.measureText(value).width + 8, y + 80);
+
+        // Status pill
+        ctx.fillStyle = isAlert ? "#ef4444" : "#10b981";
+        ctx.font = "bold 11px 'Courier New', monospace";
+        ctx.fillText(`STATUS: ${status}`, x + 20, y + 120);
+      }
+
+      const cardW = 420;
+      const cardH = 145;
+      const startX = 25;
+      const startY = 90;
+      const gapX = 30;
+      const gapY = 25;
+
+      const isVoltageLow = batteryVoltage < 24.0;
+
+      // 1. Orbital Velocity (km/s)
+      drawTelemetryCard(
+        startX, startY, cardW, cardH,
+        "ORBITAL VELOCITY", orbitalVelocity.toFixed(2), "km/s",
+        "NOMINAL (7.66 km/s)", false
+      );
+
+      // 2. Battery Voltage (V) — TARGET PARAMETER
+      drawTelemetryCard(
+        startX + cardW + gapX, startY, cardW, cardH,
+        "BATTERY VOLTAGE", batteryVoltage.toFixed(1), "V",
+        isVoltageLow ? "CRITICAL (< 24.0 V)" : "NOMINAL (>= 24.0 V)", isVoltageLow
+      );
+
+      // 3. Thermal Reading (°C)
+      drawTelemetryCard(
+        startX, startY + cardH + gapY, cardW, cardH,
+        "THERMAL READING", thermalReading.toFixed(1), "°C",
+        "OPTIMAL RANGE", false
+      );
+
+      // 4. Signal Strength (dBm)
+      drawTelemetryCard(
+        startX + cardW + gapX, startY + cardH + gapY, cardW, cardH,
+        "SIGNAL STRENGTH", signalStrength.toFixed(0), "dBm",
+        "LINK QUALITY 98%", false
+      );
+
+      // Alert Banner at bottom of Canvas
+      const bannerY = startY + (cardH * 2) + (gapY * 2);
+      const bannerH = 70;
+
+      ctx.fillStyle = isVoltageLow
+        ? (isAcknowledged ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.18)")
+        : "rgba(16, 185, 129, 0.12)";
+      ctx.fillRect(startX, bannerY, (cardW * 2) + gapX, bannerH);
+
+      ctx.strokeStyle = isVoltageLow
+        ? (isAcknowledged ? "#10b981" : "#ef4444")
+        : "#10b981";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(startX, bannerY, (cardW * 2) + gapX, bannerH);
+
+      if (isVoltageLow) {
+        if (isAcknowledged) {
+          ctx.fillStyle = "#34d399";
+          ctx.font = "bold 15px 'Courier New', monospace";
+          ctx.fillText("✓ ALERT ACKNOWLEDGED: Battery Voltage " + batteryVoltage.toFixed(1) + " V confirmed by operator.", startX + 24, bannerY + 40);
+        } else {
+          ctx.fillStyle = "#f87171";
+          ctx.font = "bold 15px 'Courier New', monospace";
+          ctx.fillText("⚠ ALERT: Battery Voltage is " + batteryVoltage.toFixed(1) + " V (Threshold: < 24.0 V). Action required.", startX + 24, bannerY + 40);
+        }
+      } else {
+        ctx.fillStyle = "#34d399";
+        ctx.font = "bold 15px 'Courier New', monospace";
+        ctx.fillText("ALL SUBSYSTEMS NOMINAL: Battery Voltage is " + batteryVoltage.toFixed(1) + " V (No alert active).", startX + 24, bannerY + 40);
+      }
+    }
+
+    function handleAcknowledge() {
+      isAcknowledged = true;
+      const statusEl = document.getElementById("ack-status");
+      const btn = document.getElementById("ack-alert-btn");
+
+      statusEl.textContent = "✓ ALERT ACKNOWLEDGED (Battery: " + batteryVoltage.toFixed(1) + " V)";
+      statusEl.classList.add("acknowledged");
+
+      btn.textContent = "✓ Acknowledged";
+      btn.classList.add("acknowledged");
+      btn.disabled = true;
+
+      // Re-draw canvas banner to show acknowledged status
+      drawDashboard();
+    }
+
+    // Initial draw on page load
+    window.addEventListener("DOMContentLoaded", drawDashboard);
+    window.addEventListener("load", drawDashboard);
+  </script>
+</body>
+</html>

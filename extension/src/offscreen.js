@@ -77,7 +77,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type !== "RUN_INFERENCE") return false;
 
-  const { screenshotDataUrl, domRegions } = message.payload ?? {};
+  const { screenshotDataUrl, domRegions, mediaRegions } = message.payload ?? {};
 
   if (!screenshotDataUrl) {
     sendResponse({ success: false, error: "No screenshot data URL provided." });
@@ -92,11 +92,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // ── 2. Run Florence-2 OD + OCR ────────────────────────────────────
       const { detections, elapsed } = await analyzeImage(screenshotDataUrl);
 
-      // ── 3. Run BlazeFace (best-effort; don't fail the whole pipeline) ──
+      // ── 3. Run BlazeFace (media-constrained; only on actual <img>/<video>/<canvas>) ──
       let faceDetections = [];
       try {
         await faceReady;
-        faceDetections = await detectFaces(screenshotDataUrl);
+        faceDetections = await detectFaces(screenshotDataUrl, mediaRegions ?? []);
       } catch (err) {
         console.warn("[Offscreen] Face detection skipped:", err.message);
       }

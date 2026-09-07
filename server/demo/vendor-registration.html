@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Vendor & Contractor Onboarding Portal</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-hover: #172554;
+      --accent: #f97316;
+      --border: #cbd5e1;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .header-bar {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+      color: white;
+      padding: 24px 30px;
+      position: relative;
+    }
+    .tricolor-stripe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #ff9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%);
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #93c5fd;
+    }
+    .disclaimer-banner {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      margin: 20px 30px 0;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #92400e;
+    }
+    .disclaimer-banner strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 12.5px;
+    }
+    form {
+      padding: 24px 30px 30px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 16px;
+      margin-bottom: 16px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .req { color: #dc2626; margin-left: 2px; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text);
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
+    }
+    .field-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    button.primary-btn {
+      flex: 2;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.primary-btn:hover {
+      background: var(--primary-hover);
+    }
+    button.secondary-btn {
+      flex: 1;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button.secondary-btn:hover {
+      background: #e2e8f0;
+    }
+    #status-toast {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-bar">
+      <div class="tricolor-stripe"></div>
+      <span class="badge">National Vendor Portal (GeM Model)</span>
+      <h1>Indian Vendor & Contractor Registration</h1>
+      <p class="subtitle">Statutory Compliance & Direct Beneficiary Transfer Onboarding</p>
+    </div>
+
+    <div class="disclaimer-banner">
+      <strong>⚠️ DEMO SCENARIO BENCHMARK (SYNTHETIC VALUES ONLY)</strong>
+      All fields and sample values displayed on this page are strictly synthetic placeholders for verifying local visual PII redaction under India's Digital Personal Data Protection Act 2023 principles. No actual personal records are stored or sent.
+    </div>
+
+    <form id="vendorRegistrationForm" autocomplete="off" onsubmit="event.preventDefault(); document.getElementById('status-toast').style.display='block';">
+      <!-- Section 1: Business Identity & Contact -->
+      <div class="section-title">1. Authorized Representative & Identification</div>
+      
+      <div class="form-group">
+        <label for="full_name">Authorized Representative Full Name<span class="req">*</span></label>
+        <input type="text" id="full_name" name="full_name" placeholder="Rajesh Kumar" autocomplete="name">
+        <div class="field-hint">Name matching official tax and identification documents</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="aadhaar_number">Aadhaar Number (UIDAI)<span class="req">*</span></label>
+          <input type="text" id="aadhaar_number" name="aadhaar_number" placeholder="5489 1234 5674" maxlength="14" autocomplete="off">
+          <div class="field-hint">12 digits (format: XXXX XXXX XXXX)</div>
+        </div>
+
+        <div class="form-group">
+          <label for="pan_number">Permanent Account Number (PAN)<span class="req">*</span></label>
+          <input type="text" id="pan_number" name="pan_number" placeholder="ABCDE1234F" maxlength="10" autocomplete="off">
+          <div class="field-hint">10 alphanumeric characters (e.g. ABCDE1234F)</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="gstin_number">Goods & Services Tax Identification (GSTIN)</label>
+        <input type="text" id="gstin_number" name="gstin_number" placeholder="27ABCDE1234F1Z5" maxlength="15" autocomplete="off">
+        <div class="field-hint">15 characters: State Code (01-38) + PAN + Entity Code</div>
+      </div>
+
+      <!-- Section 2: Banking & Settlement -->
+      <div class="section-title">2. Direct Benefit Banking Information</div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="account_number">Bank Account Number<span class="req">*</span></label>
+          <input type="text" id="account_number" name="account_number" placeholder="98765432101234" autocomplete="off">
+          <div class="field-hint">Current or Cash Credit account for electronic settlement</div>
+        </div>
+
+        <div class="form-group">
+          <label for="ifsc_code">Bank IFSC Code<span class="req">*</span></label>
+          <input type="text" id="ifsc_code" name="ifsc_code" placeholder="HDFC0001234" maxlength="11" autocomplete="off">
+          <div class="field-hint">11 characters (4 letters, 5th char 0, 6 branch digits)</div>
+        </div>
+      </div>
+
+      <!-- Section 3: Contact & Portal Security -->
+      <div class="section-title">3. Contact Verification & Authentication</div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="mobile_number">Mobile Number (India)<span class="req">*</span></label>
+          <input type="tel" id="mobile_number" name="mobile_number" placeholder="+91 98765 43210" autocomplete="tel">
+          <div class="field-hint">10 digits starting with 6, 7, 8, or 9</div>
+        </div>
+
+        <div class="form-group">
+          <label for="email_address">Official Email Address<span class="req">*</span></label>
+          <input type="email" id="email_address" name="email_address" placeholder="vendor.demo@example.in" autocomplete="email">
+          <div class="field-hint">Official communication & OTP delivery address</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="portal_password">Portal Password<span class="req">*</span></label>
+        <input type="password" id="portal_password" name="portal_password" placeholder="••••••••••••" autocomplete="new-password">
+        <div class="field-hint">Encrypted credentials (never leaves browser in plaintext)</div>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" id="submit_vendor_btn" class="primary-btn">Submit Vendor Registration</button>
+        <button type="button" id="reset_btn" class="secondary-btn" onclick="document.getElementById('vendorRegistrationForm').reset(); document.getElementById('status-toast').style.display='none';">Clear Form</button>
+      </div>
+
+      <div id="status-toast">
+        ✓ Vendor Registration Submitted Successfully (Local Sandbox Simulation)
+      </div>
+    </form>
+  </div>
+</body>
+</html>

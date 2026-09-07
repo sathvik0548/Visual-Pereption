@@ -9,12 +9,13 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^3.1.0",
-    "@tensorflow/tfjs-core": "^4.22.0",
+    "@tensorflow-models/blazeface": "^0.1.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
     "@tensorflow/tfjs-backend-webgpu": "^4.22.0",
-    "@tensorflow-models/blazeface": "^0.1.0"
+    "@tensorflow/tfjs-core": "^4.22.0"
   },
   "devDependencies": {
-    "esbuild": "^0.20.0"
+    "esbuild": "^0.20.0",
+    "jsdom": "^30.0.1"
   }
 }

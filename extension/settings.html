@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Profile Settings — Local Vault</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: #f4f6f8;
+        color: #1a1a2e;
+        min-height: 100vh;
+      }
+
+      /* ── Header ── */
+      .top-bar {
+        background: #1a1a2e;
+        color: #fff;
+        padding: 16px 32px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 3px solid #f59e0b;
+      }
+      .top-bar .logo {
+        width: 32px; height: 32px;
+        background: #f59e0b;
+        border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .top-bar h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
+      .top-bar p  { font-size: 11px; color: #94a3b8; font-family: ui-monospace, monospace; margin-top: 2px; }
+
+      /* ── Main layout ── */
+      .container {
+        max-width: 720px;
+        margin: 28px auto;
+        padding: 0 24px 60px;
+      }
+
+      /* ── Privacy notice ── */
+      .privacy-notice {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+        font-size: 12px;
+        color: #1e40af;
+        line-height: 1.5;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .privacy-notice .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+      /* ── Saved Banner ── */
+      #savedConfirmationBanner {
+        display: none;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        color: #15803d;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      /* ── Section card ── */
+      .section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .section-header {
+        background: #f8fafc;
+        padding: 10px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-family: ui-monospace, monospace;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .section-header .tag {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 9px;
+      }
+      .section-header .tag.sensitive {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      /* ── Form fields ── */
+      .field-row {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        align-items: start;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 12px;
+      }
+      .field-row:last-child { border-bottom: none; }
+      .field-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        padding-top: 9px;
+        line-height: 1.3;
+      }
+      .field-label .sub {
+        font-size: 10px;
+        font-weight: 400;
+        color: #94a3b8;
+        display: block;
+        margin-top: 2px;
+        font-family: ui-monospace, monospace;
+      }
+      .field-input {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="tel"],
+      input[type="date"],
+      input[type="password"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        font-size: 13px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: #1e293b;
+        background: #fff;
+        transition: border-color 0.15s;
+      }
+      input:focus {
+        outline: none;
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 2px rgba(245,158,11,0.15);
+      }
+      input.sensitive-field {
+        letter-spacing: 0.08em;
+      }
+      .field-hint {
+        font-size: 10px;
+        color: #94a3b8;
+        font-family: ui-monospace, monospace;
+      }
+      .field-hint.warn { color: #d97706; }
+
+      /* ── Save button ── */
+      .save-bar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 24px;
+      }
+      #saveBtn {
+        padding: 11px 28px;
+        background: #1a1a2e;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        letter-spacing: 0.4px;
+        transition: background 0.15s;
+      }
+      #saveBtn:hover { background: #2d2d5e; }
+      #saveBtn:active { background: #111827; }
+
+      #demoBtn {
+        padding: 11px 20px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #demoBtn:hover { background: #e2e8f0; }
+
+      #clearBtn {
+        padding: 11px 20px;
+        background: #fff;
+        color: #dc2626;
+        border: 1px solid #fca5a5;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      #clearBtn:hover { background: #fef2f2; }
+
+      /* ── Toast ── */
+      #toast {
+        display: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: ui-monospace, monospace;
+        animation: fadeInOut 3s ease forwards;
+      }
+      #toast.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+      #toast.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+      @keyframes fadeInOut {
+        0%   { opacity: 0; transform: translateY(4px); }
+        15%  { opacity: 1; transform: translateY(0); }
+        80%  { opacity: 1; }
+        100% { opacity: 0; }
+      }
+
+      /* ── Completeness badge ── */
+      #completenessBar {
+        margin-top: 28px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px 16px;
+        font-size: 11px;
+        font-family: ui-monospace, monospace;
+      }
+      #completenessBar .bar-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        color: #475569;
+      }
+      #completenessBar progress {
+        width: 100%; height: 5px;
+        border: none; background: #e2e8f0;
+      }
+      #completenessBar progress::-webkit-progress-bar { background: #e2e8f0; border-radius: 3px; }
+      #completenessBar progress::-webkit-progress-value { background: #f59e0b; border-radius: 3px; }
+      #missingList {
+        margin-top: 8px;
+        color: #94a3b8;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <div class="logo">🔒</div>
+      <div>
+        <h1>Agent Profile Settings</h1>
+        <p>LOCAL STORAGE ONLY — chrome.storage.local — PERSISTED CLIENT-SIDE</p>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="privacy-notice">
+        <span class="icon">🛡️</span>
+        <div>
+          <strong>Privacy guarantee:</strong> All values are stored exclusively in your browser's
+          <code>chrome.storage.local</code>. They are never transmitted over the network in raw form.
+          When the agent fills forms or selects options, it looks up values locally in this vault.
+        </div>
+      </div>
+
+      <div id="savedConfirmationBanner">
+        <span>✓ <strong>Saved:</strong> Your profile data has been successfully persisted to <code>chrome.storage.local</code>.</span>
+        <span id="savedFieldsCount" style="font-size: 11px; font-family: ui-monospace, monospace;"></span>
+      </div>
+
+      <!-- ── Section 1: Personal & Academic Info ── -->
+      <div class="section">
+        <div class="section-header">👤 Personal & Academic Information <span class="tag">Standard</span></div>
+
+        <div class="field-row">
+          <div class="field-label">Full Name <span class="sub">NAME</span></div>
+          <div class="field-input">
+            <input type="text" id="field-NAME" autocomplete="name" placeholder="Rajesh Kumar" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Email Address <span class="sub">EMAIL</span></div>
+          <div class="field-input">
+            <input type="email" id="field-EMAIL" autocomplete="email" placeholder="rajesh.kumar@example.in" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Phone / Mobile <span class="sub">PHONE / MOBILE</span></div>
+          <div class="field-input">
+            <input type="tel" id="field-PHONE" autocomplete="tel" placeholder="9876543210" />
+            <span class="field-hint">10-digit Indian mobile number</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Department <span class="sub">DEPARTMENT</span></div>
+          <div class="field-input">
+            <input type="text" id="field-DEPARTMENT" placeholder="CSE" />
+            <span class="field-hint">e.g. CSE, Computer Science, Engineering, ECE, MECH</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Year of Study <span class="sub">YEAR</span></div>
+          <div class="field-input">
+            <input type="text" id="field-YEAR" placeholder="3rd Year" />
+            <span class="field-hint">e.g. 1st Year, 2nd Year, 3rd Year, 4th Year</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Date of Birth <span class="sub">DOB</span></div>
+          <div class="field-input">
+            <input type="date" id="field-DOB" autocomplete="bday" />
+            <span class="field-hint">Stored as YYYY-MM-DD for date pickers</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Address <span class="sub">ADDRESS</span></div>
+          <div class="field-input">
+            <input type="text" id="field-ADDRESS" autocomplete="address-line1" placeholder="42, MG Road, Bengaluru" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">City <span class="sub">CITY</span></div>
+          <div class="field-input">
+            <input type="text" id="field-CITY" autocomplete="address-level2" placeholder="Bengaluru" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Pincode / ZIP <span class="sub">PINCODE</span></div>
+          <div class="field-input">
+            <input type="text" id="field-PINCODE" autocomplete="postal-code" placeholder="560001" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section 2: Financial & Identification Credentials ── -->
+      <div class="section">
+        <div class="section-header">🔐 Financial & Identity Credentials <span class="tag sensitive">Client-only · Never transmitted</span></div>
+
+        <div class="field-row">
+          <div class="field-label">Aadhaar Number <span class="sub">AADHAAR</span></div>
+          <div class="field-input">
+            <input type="text" id="field-AADHAAR" class="sensitive-field" autocomplete="off"
+                   placeholder="XXXX XXXX XXXX" maxlength="14" data-mask="true" inputmode="numeric" />
+            <span class="field-hint warn">⚠ Stored locally only. Auto-formatted as XXXX XXXX XXXX.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">PAN Card <span class="sub">PAN</span></div>
+          <div class="field-input">
+            <input type="text" id="field-PAN" class="sensitive-field" autocomplete="off"
+                   placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase" />
+            <span class="field-hint warn">⚠ Stored locally only. Auto-uppercased.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">GSTIN <span class="sub">GSTIN</span></div>
+          <div class="field-input">
+            <input type="text" id="field-GSTIN" class="sensitive-field" autocomplete="off"
+                   placeholder="29ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase" />
+            <span class="field-hint warn">⚠ 15-character Goods and Services Tax Identification Number.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">IFSC Code <span class="sub">IFSC</span></div>
+          <div class="field-input">
+            <input type="text" id="field-IFSC" class="sensitive-field" autocomplete="off"
+                   placeholder="HDFC0001234" maxlength="11" style="text-transform:uppercase" />
+            <span class="field-hint warn">⚠ 11-character Indian Financial System Code.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Bank Account <span class="sub">BANK_ACCOUNT</span></div>
+          <div class="field-input">
+            <input type="text" id="field-BANK_ACCOUNT" class="sensitive-field" autocomplete="off"
+                   placeholder="12345678901234" maxlength="20" />
+            <span class="field-hint warn">⚠ Account number for direct transfers.</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Default Password <span class="sub">PASSWORD</span></div>
+          <div class="field-input">
+            <input type="password" id="field-PASSWORD" autocomplete="new-password" placeholder="••••••••" />
+            <span class="field-hint warn">⚠ Stored locally only. Used to fill password fields on trusted sites.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Completeness bar ── -->
+      <div id="completenessBar">
+        <div class="bar-label">
+          <span>Profile Completeness</span>
+          <span id="completenessText">0 / 12 fields</span>
+        </div>
+        <progress id="completenessProgress" value="0" max="12"></progress>
+        <div id="missingList"></div>
+      </div>
+
+      <!-- ── Save bar ── -->
+      <div class="save-bar">
+        <button id="saveBtn">💾 Save Profile</button>
+        <button id="demoBtn">Fill Demo Values</button>
+        <button id="clearBtn">Clear All</button>
+        <div id="toast"></div>
+      </div>
+    </div>
+
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

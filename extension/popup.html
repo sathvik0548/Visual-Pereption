@@ -131,14 +131,16 @@
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         font-size: 11px;
         color: #495057;
-        padding: 8px;
+        padding: 8px 10px;
         background: #e9ecef;
         border: 1px solid #ced4da;
         border-radius: 2px;
         margin-bottom: 12px;
-        display: none;
+        display: block;
+        word-break: break-word;
+        line-height: 1.4;
       }
-      #statusText.error { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+      #statusText.error { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; font-weight: 600; }
 
       /* ── Progress Bar ── */
       #modelLoadWrap {
@@ -206,6 +208,90 @@
       }
       .swatch.region { background: #22c55e; }
       .swatch.text   { background: #60a5fa; }
+      /* ── Metrics Panel ── */
+      #metricsPanel {
+        display: none;
+        margin-bottom: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 2px;
+        background: #fff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+      }
+      #metricsPanel .panel-header {
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-bottom: 1px solid #ced4da;
+        color: #6c757d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 9px;
+      }
+      #metricsPanel .metrics-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+      }
+      #metricsPanel .metric-cell {
+        padding: 5px 8px;
+        border-bottom: 1px solid #f0f0f0;
+        border-right: 1px solid #f0f0f0;
+      }
+      #metricsPanel .metric-cell:nth-child(2n) { border-right: none; }
+      #metricsPanel .metric-label { color: #6c757d; font-size: 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+      #metricsPanel .metric-value { color: #212529; font-weight: 700; font-size: 12px; margin-top: 1px; }
+      #metricsPanel .metric-value.good { color: #16a34a; }
+      #metricsPanel .metric-value.warn { color: #ca8a04; }
+      #metricsPanel .metric-note {
+        padding: 4px 8px;
+        color: #495057;
+        font-size: 9px;
+        border-top: 1px solid #ced4da;
+        background: #f8f9fa;
+        font-style: italic;
+      }
+
+      /* ── Leak Check Panel ── */
+      #leakPanel {
+        display: none;
+        margin-bottom: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 2px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        overflow: hidden;
+      }
+      #leakPanel .panel-header {
+        padding: 4px 8px;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 9px;
+      }
+      #leakPanel .leak-body {
+        padding: 6px 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      #leakPanel .leak-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      #leakPanel.pass .panel-header { background: #f0fdf4; color: #15803d; }
+      #leakPanel.pass .leak-body { background: #fff; color: #15803d; }
+      #leakPanel.pass .leak-dot { background: #16a34a; }
+      #leakPanel.fail .panel-header { background: #fef2f2; color: #b91c1c; }
+      #leakPanel.fail .leak-body { background: #fef2f2; color: #b91c1c; }
+      #leakPanel.fail .leak-dot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.25); }
+      #leakPanel.warn .panel-header { background: #fefce8; color: #ca8a04; }
+      #leakPanel.warn .leak-body { background: #fefce8; color: #ca8a04; }
+      #leakPanel.warn .leak-dot { background: #eab308; }
     </style>
   </head>
   <body>
@@ -222,6 +308,7 @@
         <h1>Redaction Agent</h1>
         <p>FLORENCE-2 / LOCAL WEBGPU</p>
       </div>
+      <button id="openVaultBtn" style="margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 5px 9px; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; cursor: pointer; color: #334155; font-family: ui-monospace, monospace;" title="Open local profile vault">⚙ Profile</button>
     </header>
 
     <div class="pipeline">
@@ -230,6 +317,21 @@
       <div class="stage" id="stage-redact">RED</div>
       <div class="stage" id="stage-send">SND</div>
       <div class="stage" id="stage-act">ACT</div>
+    </div>
+
+    <!-- Provider Mode Switcher & Status Badge -->
+    <div style="margin-bottom: 14px; padding: 8px 10px; border-radius: 4px; border: 1px solid #cbd5e1; background: #ffffff; font-family: ui-monospace, monospace;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+        <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">VLM Provider Mode</span>
+        <select id="modeSelect" style="font-size: 11px; padding: 2px 6px; border: 1px solid #94a3b8; border-radius: 3px; background: #f8fafc; font-weight: 600; cursor: pointer;">
+          <option value="cloud">Cloud (Groq)</option>
+          <option value="offline">Offline (Local Ollama)</option>
+        </select>
+      </div>
+      <div id="modeStatusBadge" style="font-size: 10px; padding: 4px 8px; border-radius: 3px; font-weight: 700; display: flex; align-items: center; gap: 6px; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
+        <span id="modeStatusDot" style="width: 7px; height: 7px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
+        <span id="modeStatusText">CLOUD MODE (Groq)</span>
+      </div>
     </div>
 
     <div class="control-group">
@@ -250,18 +352,71 @@
 
     <div id="statusText">System idle.</div>
 
+    <!-- ── Inline User Input Fallback Prompt (Requirement 4) ── -->
+    <div id="userInputPromptCard" style="display: none; margin-bottom: 12px; background: #fff; border: 2px solid #f59e0b; border-radius: 4px; padding: 12px; font-family: ui-monospace, monospace;">
+      <div id="promptCardTitle" style="font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 8px;">
+        No value found for FIELD — enter one now?
+      </div>
+      <input type="text" id="promptCardInput" placeholder="Enter value..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 12px; margin-bottom: 8px;" />
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #475569; margin-bottom: 10px;">
+        <input type="checkbox" id="promptCardSaveDefault" checked style="cursor: pointer;" />
+        <label for="promptCardSaveDefault" id="promptCardSaveLabel" style="cursor: pointer;">Save this as your default for future forms?</label>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="promptCardSubmitBtn" style="background: #1a1a2e; color: #fff; font-size: 11px; padding: 6px 12px; border-radius: 3px;">Submit & Continue</button>
+        <button id="promptCardSkipBtn" style="background: #fff; color: #64748b; border: 1px solid #cbd5e1; font-size: 11px; padding: 6px 12px; border-radius: 3px;">Skip Step</button>
+      </div>
+    </div>
+
+    <!-- ── Data Reduction Metrics Panel ── -->
+    <div id="metricsPanel">
+      <div class="panel-header">▸ Data Reduction Metrics</div>
+      <div class="metrics-grid">
+        <div class="metric-cell">
+          <div class="metric-label">Raw Screenshot</div>
+          <div class="metric-value" id="metric-raw">—</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">Sent Payload</div>
+          <div class="metric-value" id="metric-sent">—</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">Byte Δ</div>
+          <div class="metric-value" id="metric-reduction">—</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">PII Surface</div>
+          <div class="metric-value" id="metric-surface">—</div>
+        </div>
+      </div>
+      <div class="metric-note" id="metric-note"></div>
+    </div>
+
+    <!-- ── Redaction Leak Verification Panel ── -->
+    <div id="leakPanel">
+      <div class="panel-header">▸ Redaction Leak Verification</div>
+      <div class="leak-body">
+        <div class="leak-dot"></div>
+        <span id="leakPanelText">Awaiting redaction…</span>
+      </div>
+    </div>
+
     <div id="canvasWrap">
       <canvas id="debugCanvas"></canvas>
     </div>
 
     <div id="piiTable"></div>
 
-    <div id="legend">
+    <div id="legend" style="flex-wrap: wrap; gap: 6px 10px;">
       <div class="legend-item"><div class="swatch region"></div><span>OD</span></div>
       <div class="legend-item"><div class="swatch text"></div><span>OCR</span></div>
       <div class="legend-item"><div class="swatch" style="background:#ef4444"></div><span>PASS</span></div>
       <div class="legend-item"><div class="swatch" style="background:#f97316"></div><span>EMAIL</span></div>
-      <div class="legend-item"><div class="swatch" style="background:#eab308"></div><span>PHONE</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#ea580c"></div><span>AADHAAR</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#10b981"></div><span>PAN</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#6366f1"></div><span>GSTIN</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#0ea5e9"></div><span>IFSC</span></div>
+      <div class="legend-item"><div class="swatch" style="background:#ca8a04"></div><span>MOBILE</span></div>
       <div class="legend-item"><div class="swatch" style="background:#ec4899"></div><span>CARD</span></div>
       <div class="legend-item"><div class="swatch" style="background:#06b6d4"></div><span>FACE</span></div>
     </div>

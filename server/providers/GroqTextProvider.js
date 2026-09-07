@@ -35,15 +35,18 @@ ${JSON.stringify(dom_summary, null, 2)}
 
 You must respond ONLY with strict JSON. Do NOT include markdown blocks or conversational text:
 {
-  "action": "click" | "type" | "scroll" | "done",
+  "action": "click" | "type" | "select_choice" | "scroll" | "done",
   "target_id": "string",
+  "target_group_id": "string" | null,
   "value": "string" | null,
+  "match_value": "string" | null,
   "reasoning": "string"
 }
 
 Rules:
-- Use element_id values from dom_summary as target_id
-- For "type" actions, provide realistic placeholder values (NOT real PII)
+- CRITICAL: You MUST use the exact element_id values (e.g. "agent_0", "agent_1") from dom_summary as target_id or target_group_id. NEVER guess or invent element IDs like "name-input", "department-CSE", or "form-container".
+- For radio/checkbox options or dropdowns, use action "select_choice" and specify "match_value" (e.g. "CSE", "3rd Year").
+- For text fields, use action "type" with realistic placeholder values (NOT real PII).
 - Return "done" when the task is complete`;
 
     // Fallback model list — tried in order until one succeeds

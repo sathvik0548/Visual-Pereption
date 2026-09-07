@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Photo Test Page</title>
+  <style>
+    body { font-family: system-ui; background: #f8fafc; color: #1e293b; padding: 40px; }
+    .card { background: white; max-width: 480px; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    p { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+    .photo-container { margin: 0 auto 20px; display: inline-block; }
+    img.avatar { width: 180px; height: 225px; object-fit: cover; border-radius: 8px; border: 2px solid #cbd5e1; display: block; }
+    .form-group { text-align: left; margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="photo-container">
+      <img src="sample-face.jpg" id="user-avatar" class="avatar" alt="Verified Identity Photo">
+    </div>
+    <h1>Executive Profile</h1>
+    <p>Identity Document &amp; Biometric Photo Verification</p>
+
+    <div class="form-group">
+      <label for="full_name">Full Name</label>
+      <input type="text" id="full_name" name="full_name" placeholder="Priya Patel">
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" name="email" placeholder="priya.patel@example.com">
+    </div>
+
+    <button type="button" id="save-btn">Verify Profile</button>
+  </div>
+</body>
+</html>

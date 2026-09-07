@@ -50,12 +50,12 @@ export async function loadFaceModel() {
 
   _loading = (async () => {
     await pickBackend();
-    console.log("[Face] Loading BlazeFace model…");
+    console.log("[Face] Loading BlazeFace model (TensorFlow.js @tensorflow-models/blazeface v0.1.0)…");
     _model = await blazeface.load({
-      maxFaces: 20,   // reasonable upper bound for a screenshot
-      scoreThreshold: 0.75,
+      maxFaces: 20,
+      scoreThreshold: 0.85, // Raised from 0.75 to prevent false positives in logos/decorations
     });
-    console.log("[Face] BlazeFace ready.");
+    console.log("[Face] BlazeFace ready with scoreThreshold 0.85.");
     return _model;
   })();
 
@@ -63,12 +63,25 @@ export async function loadFaceModel() {
 }
 
 // ---------------------------------------------------------------------------
-// Detect faces on a screenshot data URL
+// Detect faces constrained strictly to actual <img>, <video>, or <canvas> DOM elements
 // ---------------------------------------------------------------------------
-export async function detectFaces(imageDataUrl) {
+export async function detectFaces(imageDataUrl, mediaRegions = []) {
+  console.log("[Face] ================= detectFaces INVOKED =================");
+  console.log("[Face] Model: BlazeFace via TensorFlow.js (@tensorflow-models/blazeface v0.1.0)");
+  console.log("[Face] Acceptance Threshold: 0.85");
+  console.log(`[Face] DOM Media Elements (<img>, <video>, <canvas>) received: ${mediaRegions.length}`, mediaRegions);
+
+  // SANITY CONSTRAINT: Only run face detection on regions of the screenshot that
+  // correspond to actual <img>, <video>, or <canvas> elements in the DOM.
+  // A decorative CSS gradient, SVG banner, or styled text block is NOT photo content.
+  if (!mediaRegions || mediaRegions.length === 0) {
+    console.log("[Face] ✓ SANITY CONSTRAINT ENFORCED: 0 media elements (<img>, <video>, <canvas>) found in DOM. Skipping face detection completely (Zero false positives guaranteed).");
+    return [];
+  }
+
   const model = await loadFaceModel();
 
-  // Load into an Image element
+  // Load screenshot into an Image element
   const img = new Image();
   await new Promise((res, rej) => {
     img.onload  = res;
@@ -76,20 +89,83 @@ export async function detectFaces(imageDataUrl) {
     img.src     = imageDataUrl;
   });
 
-  // Draw onto a regular canvas in the offscreen document's DOM
-  const canvas    = document.createElement("canvas");
-  canvas.width    = img.naturalWidth;
-  canvas.height   = img.naturalHeight;
-  canvas.getContext("2d").drawImage(img, 0, 0);
+  const fullCanvas = document.createElement("canvas");
+  fullCanvas.width  = img.naturalWidth;
+  fullCanvas.height = img.naturalHeight;
+  const fullCtx = fullCanvas.getContext("2d");
+  fullCtx.drawImage(img, 0, 0);
 
-  const predictions = await model.estimateFaces(canvas, false /* returnTensors */);
+  const detectedFaces = [];
 
-  return predictions.map((pred) => {
-    const [x1, y1] = pred.topLeft;
-    const [x2, y2] = pred.bottomRight;
-    return {
-      bbox:       [Math.round(x1), Math.round(y1), Math.round(x2 - x1), Math.round(y2 - y1)],
-      confidence: +(pred.probability?.[0] ?? 0.9).toFixed(3),
-    };
-  });
+  // Iterate over each actual media element in the DOM
+  for (const media of mediaRegions) {
+    const [mx, my, mw, mh] = media.bbox || [];
+    if (!mw || !mh || mw < 24 || mh < 24) continue;
+
+    // Crop the media region onto an isolated canvas
+    const mediaCanvas = document.createElement("canvas");
+    mediaCanvas.width = mw;
+    mediaCanvas.height = mh;
+    const mctx = mediaCanvas.getContext("2d");
+    mctx.drawImage(fullCanvas, mx, my, mw, mh, 0, 0, mw, mh);
+
+    console.log(`[Face] Running BlazeFace inference on DOM media element <${media.tag} id="${media.id}"> bbox=[${mx}, ${my}, ${mw}, ${mh}]...`);
+    const predictions = await model.estimateFaces(mediaCanvas, false /* returnTensors */);
+
+    console.log(`[Face] BlazeFace returned ${predictions.length} raw prediction(s) for <${media.tag} id="${media.id}">`);
+
+    for (let i = 0; i < predictions.length; i++) {
+      const pred = predictions[i];
+      const [x1, y1] = pred.topLeft;
+      const [x2, y2] = pred.bottomRight;
+      const w = x2 - x1;
+      const h = y2 - y1;
+
+      // Extract real confidence probability
+      let prob = 0;
+      if (Array.isArray(pred.probability) || pred.probability instanceof Float32Array) {
+        prob = pred.probability[0];
+      } else if (typeof pred.probability === "number") {
+        prob = pred.probability;
+      }
+
+      console.log(`[Face] RAW MODEL OUTPUT [Detection #${i} on <${media.tag} id="${media.id}">]:`, {
+        localBbox: [Math.round(x1), Math.round(y1), Math.round(w), Math.round(h)],
+        confidenceScore: +prob.toFixed(4),
+        rawProbability: pred.probability,
+        threshold: 0.85
+      });
+
+      // 1. Confidence threshold check
+      if (prob < 0.85) {
+        console.log(`[Face] Rejected detection #${i}: score ${prob.toFixed(4)} is below threshold 0.85`);
+        continue;
+      }
+
+      // 2. Aspect ratio check (human face aspect ratio is upright ~0.60 to ~1.35)
+      const aspect = w / h;
+      if (aspect < 0.55 || aspect > 1.45) {
+        console.warn(`[Face] Rejected detection #${i}: unnatural aspect ratio ${aspect.toFixed(2)} (${w}x${h})`);
+        continue;
+      }
+
+      // Map back to global screenshot physical coordinates
+      const globalBbox = [
+        Math.round(mx + x1),
+        Math.round(my + y1),
+        Math.round(w),
+        Math.round(h)
+      ];
+
+      console.log(`[Face] ✓ ACCEPTED FACE DETECTION in <${media.tag}>: globalBbox=[${globalBbox.join(",")}], confidence=${prob.toFixed(4)}`);
+
+      detectedFaces.push({
+        bbox:       globalBbox,
+        confidence: +prob.toFixed(4),
+      });
+    }
+  }
+
+  console.log(`[Face] Total confirmed faces after media constraint & thresholding: ${detectedFaces.length}`);
+  return detectedFaces;
 }

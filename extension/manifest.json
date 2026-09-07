@@ -8,8 +8,13 @@
     "activeTab",
     "scripting",
     "tabs",
-    "offscreen"
+    "offscreen",
+    "storage"
   ],
+  "options_ui": {
+    "page": "settings.html",
+    "open_in_tab": true
+  },
 
   "host_permissions": [
     "http://localhost:3000/*",
