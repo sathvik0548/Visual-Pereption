@@ -412,11 +412,13 @@ function scanDOM() {
     }
   });
 
-  // 2. Broadened candidate selectors: query inputs, textareas, selects, and ARIA roles
+  // 2. Broadened candidate selectors: query inputs, textareas, selects, buttons, and ARIA roles
   const candidateSelectors = [
     'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([type="file"])',
     'textarea',
     'select',
+    'button',
+    '[role="button"]',
     '[role="textbox"]',
     '[role="radio"]',
     '[role="checkbox"]',
@@ -441,6 +443,8 @@ function scanDOM() {
       addRegion(el, "CHECKBOX_OPTION", 0.85, label);
     } else if (role === "textbox" || el.isContentEditable) {
       addRegion(el, "FORM_FIELD", 0.80, label);
+    } else if (role === "button" || el.tagName === "BUTTON") {
+      addRegion(el, "BUTTON", 0.90, label || (el.innerText || el.textContent || "").trim());
     }
   });
 

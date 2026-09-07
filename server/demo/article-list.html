@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Science & Technology Chronicle — Articles</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --cookie-bg: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding-bottom: 120px;
+    }
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .edition {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .container {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 0 20px;
+    }
+    .page-intro {
+      margin-bottom: 24px;
+    }
+    .page-intro h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .page-intro p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .articles-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .article-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+      position: relative;
+    }
+    .article-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .article-card.selected {
+      border: 2px solid #16a34a;
+      background: #f0fdf4;
+    }
+    .article-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .article-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .article-desc {
+      font-size: 14px;
+      color: #334155;
+      margin-bottom: 16px;
+    }
+    .article-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .article-date {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .read-more-btn {
+      background: #ffffff;
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .read-more-btn:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+    .read-more-btn.opened {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #ffffff;
+    }
+
+    /* ── Cookie Consent Banner Overlay ── */
+    #cookie-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--cookie-bg);
+      color: #ffffff;
+      padding: 18px 28px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+      z-index: 99999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      border-top: 1px solid #334155;
+    }
+    .cookie-content h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #f8fafc;
+    }
+    .cookie-content p {
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 680px;
+    }
+    .cookie-btn {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .cookie-btn:hover {
+      background: #0369a1;
+    }
+
+    /* ── Action Verification Bar ── */
+    #action-status-bar {
+      margin-bottom: 20px;
+      padding: 12px 18px;
+      border-radius: 6px;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      color: #0369a1;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+    }
+    #action-status-bar.active {
+      display: block;
+    }
+    #cookie-status-indicator {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: #fee2e2;
+      color: #991b1b;
+      font-weight: 600;
+    }
+    #cookie-status-indicator.dismissed {
+      background: #dcfce7;
+      color: #166534;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cookie Consent Banner (must be dismissed first) -->
+  <div id="cookie-banner" role="dialog" aria-label="Cookie Consent Banner">
+    <div class="cookie-content">
+      <h3>Cookie & Privacy Notice</h3>
+      <p>We use essential and analytical cookies to ensure our news portal functions properly and to measure readership engagement across science articles.</p>
+    </div>
+    <button id="dismiss-cookie-banner-btn" class="cookie-btn" onclick="dismissCookieBanner()">Dismiss Cookie Banner</button>
+  </div>
+
+  <header>
+    <h1>Global Science & Technology Chronicle</h1>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span id="cookie-status-indicator">Cookie Banner Active</span>
+      <span class="edition">Daily Dispatch • September 2026</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="action-status-bar">
+      <span id="action-status-text">No article opened yet.</span>
+    </div>
+
+    <div class="page-intro">
+      <h2>Curated Dispatches</h2>
+      <p>Select any article below to read in-depth technical analysis and field reports.</p>
+    </div>
+
+    <div class="articles-grid">
+      <!-- Article 1: Semiconductors -->
+      <article class="article-card" id="card-semiconductor">
+        <span class="article-tag">Microchips & Hardware</span>
+        <h3 class="article-title" id="title-semiconductor">Global Semiconductor Supply Stabilizes as Next-Gen Fabs Come Online</h3>
+        <p class="article-desc">New fabrication facilities in Arizona and Dresden reach commercial wafer yields, easing supply bottlenecks across automotive microcontrollers and high-performance computing clusters.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 4, 2026 • 4 min read</span>
+          <button id="read-more-semiconductor-btn" class="read-more-btn" aria-labelledby="title-semiconductor" onclick="openArticle('card-semiconductor', 'Global Semiconductor Supply Stabilizes')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 2: James Webb Exoplanet (Target for task) -->
+      <article class="article-card" id="card-exoplanet">
+        <span class="article-tag">Astrophysics & Space</span>
+        <h3 class="article-title" id="title-exoplanet">James Webb Space Telescope Detects Atmospheric Water Vapor on Distant Exoplanet K2-18b</h3>
+        <p class="article-desc">Spectroscopic transmission analysis by the NIRISS and NIRSpec instruments confirms significant atmospheric water vapor and carbon dioxide signatures on sub-Neptune exoplanet K2-18b, located 120 light-years away.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 5, 2026 • 6 min read</span>
+          <button id="read-more-exoplanet-btn" class="read-more-btn" aria-labelledby="title-exoplanet" onclick="openArticle('card-exoplanet', 'James Webb Space Telescope Exoplanet Water Vapor')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 3: Battery Tech -->
+      <article class="article-card" id="card-battery">
+        <span class="article-tag">Energy & Clean Tech</span>
+        <h3 class="article-title" id="title-battery">Solid-State Battery Breakthrough Enables 1,000 km Electric Vehicle Range</h3>
+        <p class="article-desc">Automotive consortium validates silicon-composite anodes exhibiting zero dendrite formation over 2,000 fast-charge cycles at ambient temperatures.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 5, 2026 • 5 min read</span>
+          <button id="read-more-battery-btn" class="read-more-btn" aria-labelledby="title-battery" onclick="openArticle('card-battery', 'Solid-State Battery Breakthrough')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 4: Urban Forestry -->
+      <article class="article-card" id="card-forestry">
+        <span class="article-tag">Environment & Urban Design</span>
+        <h3 class="article-title" id="title-forestry">Dense Urban Reforestation Lowers Metro Peak Temperatures by 3.5°C</h3>
+        <p class="article-desc">Longitudinal sensor networks across Singapore and Seoul prove micro-forest canopies drastically reduce heat island effects and storm runoff volumes.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 6, 2026 • 3 min read</span>
+          <button id="read-more-forestry-btn" class="read-more-btn" aria-labelledby="title-forestry" onclick="openArticle('card-forestry', 'Dense Urban Reforestation')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 5: Archeology -->
+      <article class="article-card" id="card-archeology">
+        <span class="article-tag">Archeology & History</span>
+        <h3 class="article-title" id="title-archeology">Intact Late Bronze Age Metallurgical Foundry Unearthed in Crete</h3>
+        <p class="article-desc">Excavation teams reveal ceramic tuyeres, tin ingot fragments, and oxhide molds dating back to 1350 BCE, shedding light on Aegean trade networks.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 6, 2026 • 4 min read</span>
+          <button id="read-more-archeology-btn" class="read-more-btn" aria-labelledby="title-archeology" onclick="openArticle('card-archeology', 'Bronze Age Metallurgical Foundry')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 6: Quantum Computing -->
+      <article class="article-card" id="card-quantum">
+        <span class="article-tag">Quantum Systems</span>
+        <h3 class="article-title" id="title-quantum">500-Qubit Superconducting Processor Achieves Fault-Tolerant Logical Qubits</h3>
+        <p class="article-desc">Surface-code error suppression exceeds the physical fault threshold, demonstrating reliable quantum phase estimation on complex molecular simulations.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 7, 2026 • 7 min read</span>
+          <button id="read-more-quantum-btn" class="read-more-btn" aria-labelledby="title-quantum" onclick="openArticle('card-quantum', '500-Qubit Superconducting Processor')">Read More</button>
+        </div>
+      </article>
+
+      <!-- Article 7: Marine Conservation -->
+      <article class="article-card" id="card-marine">
+        <span class="article-tag">Marine Biology</span>
+        <h3 class="article-title" id="title-marine">International High Seas Treaty Ratified to Protect Deep Sea Coral Ecosystems</h3>
+        <p class="article-desc">Sixty nations pledge legally binding moratoriums on exploratory seafloor dredging across biodiversity hotspots in the South Pacific.</p>
+        <div class="article-meta">
+          <span class="article-date">Published Sept 7, 2026 • 4 min read</span>
+          <button id="read-more-marine-btn" class="read-more-btn" aria-labelledby="title-marine" onclick="openArticle('card-marine', 'High Seas Coral Ecosystems Treaty')">Read More</button>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    function dismissCookieBanner() {
+      const banner = document.getElementById("cookie-banner");
+      if (banner) {
+        banner.style.display = "none";
+      }
+      const indicator = document.getElementById("cookie-status-indicator");
+      if (indicator) {
+        indicator.textContent = "Cookie Banner Dismissed ✓";
+        indicator.className = "dismissed";
+      }
+      console.log("[Page Event] Cookie banner dismissed.");
+    }
+
+    function openArticle(cardId, articleName) {
+      document.querySelectorAll(".article-card").forEach(c => c.classList.remove("selected"));
+      document.querySelectorAll(".read-more-btn").forEach(b => {
+        b.classList.remove("opened");
+        b.textContent = "Read More";
+      });
+
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.classList.add("selected");
+        const btn = card.querySelector(".read-more-btn");
+        if (btn) {
+          btn.classList.add("opened");
+          btn.textContent = "Reading Article ✓";
+        }
+      }
+
+      const statusBar = document.getElementById("action-status-bar");
+      const statusText = document.getElementById("action-status-text");
+      if (statusBar && statusText) {
+        statusBar.className = "active";
+        statusText.textContent = `✓ Article Opened: "${articleName}"`;
+      }
+
+      console.log(`[Page Event] Article Opened: "${articleName}" (Card: ${cardId})`);
+    }
+  </script>
+</body>
+</html>

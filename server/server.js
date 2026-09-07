@@ -91,6 +91,15 @@ app.get([
   res.sendFile(path.join(__dirname, "demo", "telemetry-dashboard.html"));
 });
 
+app.get([
+  "/demo/article-list.html",
+  "/demo/article-list",
+  "/article-list.html",
+  "/article-list"
+], (req, res) => {
+  res.sendFile(path.join(__dirname, "demo", "article-list.html"));
+});
+
 let demoMetrics = {
   runs: 0,
   totalLatency: 0,
