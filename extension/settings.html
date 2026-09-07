@@ -276,9 +276,9 @@
       <div class="privacy-notice">
         <span class="icon">🛡️</span>
         <div>
-          <strong>Privacy guarantee:</strong> All values are stored exclusively in your browser's
+          <strong>Privacy guarantee:</strong> All personal and sensitive values are stored exclusively in your browser's
           <code>chrome.storage.local</code>. They are never transmitted over the network in raw form.
-          When the agent fills forms or selects options, it looks up values locally in this vault.
+          When the agent fills forms or selects choices, it resolves the data locally on your device.
         </div>
       </div>
 
@@ -289,12 +289,13 @@
 
       <!-- ── Section 1: Personal & Academic Info ── -->
       <div class="section">
-        <div class="section-header">👤 Personal & Academic Information <span class="tag">Standard</span></div>
+        <div class="section-header">👤 Personal & Academic Information <span class="tag sensitive">Client-only · Never transmitted</span></div>
 
         <div class="field-row">
           <div class="field-label">Full Name <span class="sub">NAME</span></div>
           <div class="field-input">
             <input type="text" id="field-NAME" autocomplete="name" placeholder="Rajesh Kumar" />
+            <span class="field-hint warn">⚠ Stored locally only. Used to fill Name and Applicant fields.</span>
           </div>
         </div>
 
@@ -302,14 +303,15 @@
           <div class="field-label">Email Address <span class="sub">EMAIL</span></div>
           <div class="field-input">
             <input type="email" id="field-EMAIL" autocomplete="email" placeholder="rajesh.kumar@example.in" />
+            <span class="field-hint warn">⚠ Stored locally only. Auto-trimmed and sanitized.</span>
           </div>
         </div>
 
         <div class="field-row">
           <div class="field-label">Phone / Mobile <span class="sub">PHONE / MOBILE</span></div>
           <div class="field-input">
-            <input type="tel" id="field-PHONE" autocomplete="tel" placeholder="9876543210" />
-            <span class="field-hint">10-digit Indian mobile number</span>
+            <input type="tel" id="field-PHONE" autocomplete="tel" placeholder="9876543210" maxlength="10" />
+            <span class="field-hint warn">⚠ Stored locally only. 10-digit Indian mobile number.</span>
           </div>
         </div>
 
@@ -317,7 +319,7 @@
           <div class="field-label">Department <span class="sub">DEPARTMENT</span></div>
           <div class="field-input">
             <input type="text" id="field-DEPARTMENT" placeholder="CSE" />
-            <span class="field-hint">e.g. CSE, Computer Science, Engineering, ECE, MECH</span>
+            <span class="field-hint warn">⚠ Stored locally only. Auto-matched in radio & dropdown choices (e.g. CSE).</span>
           </div>
         </div>
 
@@ -325,7 +327,7 @@
           <div class="field-label">Year of Study <span class="sub">YEAR</span></div>
           <div class="field-input">
             <input type="text" id="field-YEAR" placeholder="3rd Year" />
-            <span class="field-hint">e.g. 1st Year, 2nd Year, 3rd Year, 4th Year</span>
+            <span class="field-hint warn">⚠ Stored locally only. Auto-matched in radio & dropdown choices (e.g. 3rd Year).</span>
           </div>
         </div>
 
@@ -333,7 +335,7 @@
           <div class="field-label">Date of Birth <span class="sub">DOB</span></div>
           <div class="field-input">
             <input type="date" id="field-DOB" autocomplete="bday" />
-            <span class="field-hint">Stored as YYYY-MM-DD for date pickers</span>
+            <span class="field-hint warn">⚠ Stored locally only. Stored as YYYY-MM-DD for date pickers.</span>
           </div>
         </div>
 
@@ -341,6 +343,7 @@
           <div class="field-label">Address <span class="sub">ADDRESS</span></div>
           <div class="field-input">
             <input type="text" id="field-ADDRESS" autocomplete="address-line1" placeholder="42, MG Road, Bengaluru" />
+            <span class="field-hint warn">⚠ Stored locally only. Used for shipping and billing addresses.</span>
           </div>
         </div>
 
@@ -348,13 +351,15 @@
           <div class="field-label">City <span class="sub">CITY</span></div>
           <div class="field-input">
             <input type="text" id="field-CITY" autocomplete="address-level2" placeholder="Bengaluru" />
+            <span class="field-hint warn">⚠ Stored locally only. Auto-filled in city and region inputs.</span>
           </div>
         </div>
 
         <div class="field-row">
           <div class="field-label">Pincode / ZIP <span class="sub">PINCODE</span></div>
           <div class="field-input">
-            <input type="text" id="field-PINCODE" autocomplete="postal-code" placeholder="560001" />
+            <input type="text" id="field-PINCODE" autocomplete="postal-code" placeholder="560001" maxlength="6" />
+            <span class="field-hint warn">⚠ Stored locally only. 6-digit postal code.</span>
           </div>
         </div>
       </div>
@@ -386,7 +391,7 @@
           <div class="field-input">
             <input type="text" id="field-GSTIN" class="sensitive-field" autocomplete="off"
                    placeholder="29ABCDE1234F1Z5" maxlength="15" style="text-transform:uppercase" />
-            <span class="field-hint warn">⚠ 15-character Goods and Services Tax Identification Number.</span>
+            <span class="field-hint warn">⚠ Stored locally only. 15-character Goods and Services Tax ID.</span>
           </div>
         </div>
 
@@ -395,7 +400,7 @@
           <div class="field-input">
             <input type="text" id="field-IFSC" class="sensitive-field" autocomplete="off"
                    placeholder="HDFC0001234" maxlength="11" style="text-transform:uppercase" />
-            <span class="field-hint warn">⚠ 11-character Indian Financial System Code.</span>
+            <span class="field-hint warn">⚠ Stored locally only. 11-character Indian Financial System Code.</span>
           </div>
         </div>
 
@@ -404,7 +409,7 @@
           <div class="field-input">
             <input type="text" id="field-BANK_ACCOUNT" class="sensitive-field" autocomplete="off"
                    placeholder="12345678901234" maxlength="20" />
-            <span class="field-hint warn">⚠ Account number for direct transfers.</span>
+            <span class="field-hint warn">⚠ Stored locally only. Account number for direct transfers.</span>
           </div>
         </div>
 
@@ -421,9 +426,9 @@
       <div id="completenessBar">
         <div class="bar-label">
           <span>Profile Completeness</span>
-          <span id="completenessText">0 / 12 fields</span>
+          <span id="completenessText">0 / 15 fields</span>
         </div>
-        <progress id="completenessProgress" value="0" max="12"></progress>
+        <progress id="completenessProgress" value="0" max="15"></progress>
         <div id="missingList"></div>
       </div>
 

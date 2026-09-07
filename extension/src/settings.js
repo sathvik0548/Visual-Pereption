@@ -257,6 +257,10 @@ ALL_FIELDS.forEach((key) => {
         e.target.value = formatAadhaar(e.target.value);
       } else if (["PAN", "GSTIN", "IFSC"].includes(key)) {
         e.target.value = e.target.value.toUpperCase();
+      } else if (key === "PHONE") {
+        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+      } else if (key === "PINCODE") {
+        e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
       }
       // Live completeness update as user types
       updateCompleteness(getFormValues());
@@ -265,10 +269,16 @@ ALL_FIELDS.forEach((key) => {
       clearTimeout(autoSaveTimer);
       autoSaveTimer = setTimeout(() => {
         saveVault(true); // silent auto-save
-      }, 800);
+      }, 600);
     });
 
-    input.addEventListener("blur", () => {
+    input.addEventListener("blur", (e) => {
+      if (key === "EMAIL") {
+        e.target.value = e.target.value.trim().toLowerCase();
+      } else if (key === "NAME" || key === "ADDRESS" || key === "CITY" || key === "DEPARTMENT" || key === "YEAR") {
+        e.target.value = e.target.value.trim();
+      }
+      updateCompleteness(getFormValues());
       saveVault(true);
     });
   }
