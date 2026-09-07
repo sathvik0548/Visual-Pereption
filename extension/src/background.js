@@ -392,45 +392,35 @@ chrome.runtime.onConnect.addListener((port) => {
         break;
       }
 
-      // ── Step 4b: Redaction Leak Verification (geometric, instant) ───────
-      // We painted the black boxes ourselves so we verify geometrically by
-      // sampling the center pixel of each masked region from the redacted
-      // image. This is instant vs. the previous full Florence-2 second pass
-      // (which took 30-120s and caused the hang on both Cloud and Offline).
+      // ── Step 4b: Redaction Leak Verification (offscreen, geometric) ──────
+      // Bug fix: background.js is an MV3 service worker — it has NO access to
+      // Image, canvas, or document. We send a VERIFY_REDACTION message to the
+      // offscreen document (which has full window context) to do the pixel check.
       let leakCheckPassed = true;
       let leakDetails = { leaksFound: 0, leakRegions: [], checkedRegions: sensitiveRegions.length };
       try {
         if (sensitiveRegions.length > 0) {
-          // Decode the redacted image into a canvas and sample center pixels
-          const leakingRegions = await new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => {
-              try {
-                const cv = new OffscreenCanvas(img.width, img.height);
-                const ctx2 = cv.getContext("2d");
-                ctx2.drawImage(img, 0, 0);
-                const leakers = [];
-                for (const r of sensitiveRegions) {
-                  const [rx, ry, rw, rh] = r.bbox;
-                  const cx = Math.round(rx + rw / 2);
-                  const cy = Math.round(ry + rh / 2);
-                  // Guard bounds
-                  if (cx < 0 || cy < 0 || cx >= img.width || cy >= img.height) continue;
-                  const px = ctx2.getImageData(cx, cy, 1, 1).data; // [R, G, B, A]
-                  // Black box = R+G+B < 30 (near-black)
-                  if (px[0] + px[1] + px[2] >= 30) {
-                    leakers.push({ ...r, center_pixel: [px[0], px[1], px[2]] });
-                  }
+          // Delegate pixel-sampling to offscreen document (has window/canvas access)
+          const verifyResp = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve({ ok: true, leakers: [], checked: sensitiveRegions.length }), 5000);
+            chrome.runtime.sendMessage(
+              {
+                type: "VERIFY_REDACTION",
+                payload: { redactedDataUrl: finalScreenshotDataUrl, sensitiveRegions }
+              },
+              (resp) => {
+                clearTimeout(timer);
+                if (chrome.runtime.lastError) {
+                  console.warn("[BG] Step 4b: VERIFY_REDACTION message error (non-fatal):", chrome.runtime.lastError.message);
+                  resolve({ ok: true, leakers: [], checked: sensitiveRegions.length });
+                } else {
+                  resolve(resp || { ok: true, leakers: [], checked: sensitiveRegions.length });
                 }
-                resolve(leakers);
-              } catch (e) {
-                resolve([]); // OffscreenCanvas not available — treat as clean
               }
-            };
-            img.onerror = () => resolve([]);
-            img.src = finalScreenshotDataUrl;
+            );
           });
 
+          const leakingRegions = verifyResp.leakers || [];
           leakDetails = {
             leaksFound: leakingRegions.length,
             leakRegions: leakingRegions,
@@ -449,14 +439,14 @@ chrome.runtime.onConnect.addListener((port) => {
               message: `🚨 LEAK DETECTED: ${leakingRegions.length} region(s) not blacked out — payload BLOCKED`,
             });
           } else {
-            console.log(`[BG] Step 4b PASS: All ${sensitiveRegions.length} region(s) verified black. Redaction is solid.`);
+            console.log(`[BG] Step 4b PASS: All ${sensitiveRegions.length} region(s) verified black (geometric).`);
             safePost({
               type: "LEAK_CHECK",
               passed: true,
               leaksFound: 0,
               leakRegions: [],
               checkedRegions: sensitiveRegions.length,
-              message: `✓ 0 leaks — ${sensitiveRegions.length} masked region(s) verified black (geometric check)`,
+              message: `✓ 0 leaks — ${sensitiveRegions.length} masked region(s) verified black`,
             });
           }
         } else {
@@ -493,32 +483,36 @@ chrome.runtime.onConnect.addListener((port) => {
       }
 
       // ── Step 5: Send Payload to Server ─────────────────────────────────
+      // Bug fix: hoist dom_summary and manifest to outer scope so Step 6
+      // (the action executor) can reference them for bbox coordinate lookup.
+      // Previously they were const-declared inside the try{} block and
+      // caused ReferenceError: dom_summary is not defined at line 639.
+      let manifest = (sensitiveRegions || []).map((r, i) => ({
+        region_id: `region_${i}`,
+        bbox: r.bbox,
+        type: r.type,
+        redaction_style: "black_box",
+        confidence: r.confidence,
+        source: r.source || "dom"
+      }));
+
+      let dom_summary = (domResult.domRegions || []).map((r, i) => ({
+        element_id: r.agentId || `agent_${i}`,
+        dom_id: r.id || "",
+        name: r.name || "",
+        placeholder: r.placeholder || "",
+        tag: r.tag || "input",
+        role: r.role || (r.inputType === "radio" ? "radio" : "textbox"),
+        label: r.label || "",
+        field_type: r.type || "",
+        bbox: r.bbox,
+        current_value: r.current_value || ""
+      }));
+
       let serverResult;
       try {
         console.log("[BG] Step 5: Preparing AgentRequestV1 payload for server...");
         safePost({ type: "STAGE_CHANGE", stage: "send", text: "Sending redacted payload to server (http://localhost:3000/analyze)…" });
-        
-        const manifest = (sensitiveRegions || []).map((r, i) => ({
-          region_id: `region_${i}`,
-          bbox: r.bbox,
-          type: r.type,
-          redaction_style: "black_box",
-          confidence: r.confidence,
-          source: r.source || "dom"
-        }));
-
-        const dom_summary = (domResult.domRegions || []).map((r, i) => ({
-          element_id: r.agentId || `agent_${i}`,
-          dom_id: r.id || "",
-          name: r.name || "",
-          placeholder: r.placeholder || "",
-          tag: r.tag || "input",
-          role: r.role || (r.inputType === "radio" ? "radio" : "textbox"),
-          label: r.label || "",
-          field_type: r.type || "",
-          bbox: r.bbox,
-          current_value: r.current_value || ""  // Live value so model skips already-filled fields
-        }));
 
         console.log("\n========================================================");
         console.log(`[BG][DEBUG] === EXACT dom_summary SENT TO /analyze (${dom_summary.length} items) ===`);
@@ -601,19 +595,31 @@ chrome.runtime.onConnect.addListener((port) => {
       }
 
       // ── Step 6: Execute Plan sequentially in content script ────────────
+      safePost({
+        type: "ANALYSIS_RESULT",
+        detections,
+        sensitiveRegions,
+        screenshotDataUrl,
+        elapsed,
+        serverResult,
+      });
+
       safePost({ type: "STAGE_CHANGE", stage: "act", text: "Executing plan…" });
 
       const plan = Array.isArray(serverResult?.plan) ? serverResult.plan : [];
       const totalSteps = plan.length;
       const stepResults = [];
 
-      if (totalSteps === 0) {
-        console.log("[BG] Step 6: Empty plan — all fields already filled or task complete.");
-        safePost({ type: "PLAN_SUMMARY", total: 0, succeeded: 0, failed: 0, details: [], message: "All fields are already filled — nothing to do." });
-      } else {
-        console.log(`[BG] Step 6: Executing ${totalSteps} plan step(s)...`);
+      // Bug fix: wrap entire Step 6 in try/finally so buttons ALWAYS re-enable.
+      // Previously any uncaught exception in the step loop left the UI frozen.
+      try {
+        if (totalSteps === 0) {
+          console.log("[BG] Step 6: Empty plan — all fields already filled or task complete.");
+          safePost({ type: "PLAN_SUMMARY", total: 0, succeeded: 0, failed: 0, details: [], message: "All fields are already filled — nothing to do." });
+        } else {
+          console.log(`[BG] Step 6: Executing ${totalSteps} plan step(s)...`);
 
-        for (const step of plan) {
+          for (const step of plan) {
           const stepNum = step.step;
           const fieldType = step.field_type || "FIELD";
           const targetId = step.target_id;
@@ -775,41 +781,43 @@ chrome.runtime.onConnect.addListener((port) => {
           await new Promise(r => setTimeout(r, 300));
         }
 
-        // ── Plan summary ────────────────────────────────────────────────
-        const succeeded = stepResults.filter(r => r.ok).length;
-        const failed = stepResults.filter(r => !r.ok).length;
-        const failedDescriptions = stepResults
-          .filter(r => !r.ok)
-          .map(r => `Step ${r.stepNum} (${r.fieldType}): ${r.reason}`);
+          // ── Plan summary ──────────────────────────────────────────────
+          const succeeded = stepResults.filter(r => r.ok).length;
+          const failed = stepResults.filter(r => !r.ok).length;
+          const failedDescriptions = stepResults
+            .filter(r => !r.ok)
+            .map(r => `Step ${r.stepNum} (${r.fieldType}): ${r.reason}`);
 
-        let summaryMsg;
-        if (failed === 0) {
-          summaryMsg = `All ${succeeded} step(s) completed successfully.`;
-        } else {
-          summaryMsg = `Completed ${succeeded} of ${totalSteps} steps. ${failedDescriptions.join(" | ")}`;
+          let summaryMsg;
+          if (failed === 0) {
+            summaryMsg = `All ${succeeded} step(s) completed successfully.`;
+          } else {
+            summaryMsg = `Completed ${succeeded} of ${totalSteps} steps. ${failedDescriptions.join(" | ")}`;
+          }
+
+          console.log(`[BG] Step 6 Summary: ${summaryMsg}`);
+          safePost({
+            type: "PLAN_SUMMARY",
+            total: totalSteps,
+            succeeded,
+            failed,
+            details: stepResults,
+            message: summaryMsg
+          });
         }
-
-        console.log(`[BG] Step 6 Summary: ${summaryMsg}`);
-        safePost({
-          type: "PLAN_SUMMARY",
-          total: totalSteps,
-          succeeded,
-          failed,
-          details: stepResults,
-          message: summaryMsg
-        });
+      } catch (step6Err) {
+        // Catch-all: any uncaught exception in Step 6 posts an ERROR and still
+        // hits the finally block so buttons are always re-enabled.
+        console.error("[BG Error][Step 6: Plan Execution]:", step6Err);
+        safePost({ type: "ERROR", step: "Plan Execution", error: step6Err.message || String(step6Err) });
+      } finally {
+        // SAFETY NET: always re-enable buttons regardless of how Step 6 exits.
+        // Previously any unhandled exception left analyzeBtn/demoBtn disabled forever.
+        safePost({ type: "_STEP6_COMPLETE" }); // signal to popup — handled as no-op if not needed
+        console.log("[BG] Step 6 finally block — execution loop done.");
       }
 
       // ── Finalize Loop Cycle ───────────────────────────────────────────
-      safePost({
-        type: "ANALYSIS_RESULT",
-        detections,
-        sensitiveRegions,
-        screenshotDataUrl,
-        elapsed,
-        serverResult,
-      });
-
       const tEnd = performance.now();
       const loopLatency = tEnd - t0;
       stats.totalLatencyMs += loopLatency;

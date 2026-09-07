@@ -75,6 +75,53 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return false;
   }
 
+  // ── VERIFY_REDACTION: geometric pixel-sample check (Bug fix: service workers
+  //    have no Image/canvas — offscreen document has full window context) ─────
+  if (message.type === "VERIFY_REDACTION") {
+    const { redactedDataUrl, sensitiveRegions } = message.payload ?? {};
+    if (!redactedDataUrl || !sensitiveRegions || sensitiveRegions.length === 0) {
+      sendResponse({ ok: true, leakers: [], checked: 0 });
+      return true;
+    }
+    (async () => {
+      try {
+        const leakers = await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            try {
+              const cv = new OffscreenCanvas(img.width, img.height);
+              const ctx = cv.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+              const found = [];
+              for (const r of sensitiveRegions) {
+                const [rx, ry, rw, rh] = r.bbox;
+                const cx = Math.round(rx + rw / 2);
+                const cy = Math.round(ry + rh / 2);
+                if (cx < 0 || cy < 0 || cx >= img.width || cy >= img.height) continue;
+                const px = ctx.getImageData(cx, cy, 1, 1).data; // [R, G, B, A]
+                // Near-black = R+G+B < 30; anything brighter is a potential leak
+                if (px[0] + px[1] + px[2] >= 30) {
+                  found.push({ ...r, center_pixel: [px[0], px[1], px[2]] });
+                }
+              }
+              resolve(found);
+            } catch (e) {
+              console.warn("[Offscreen] OffscreenCanvas pixel check failed:", e.message);
+              resolve([]); // treat as clean if canvas unavailable
+            }
+          };
+          img.onerror = () => resolve([]);
+          img.src = redactedDataUrl;
+        });
+        sendResponse({ ok: true, leakers, checked: sensitiveRegions.length });
+      } catch (err) {
+        console.error("[Offscreen] VERIFY_REDACTION error:", err);
+        sendResponse({ ok: false, error: err.message, leakers: [], checked: 0 });
+      }
+    })();
+    return true; // keep channel open for async response
+  }
+
   if (message.type !== "RUN_INFERENCE") return false;
 
   const { screenshotDataUrl, domRegions, mediaRegions } = message.payload ?? {};

@@ -576,6 +576,14 @@ function startAnalysis(isDemo = false) {
         break;
       }
 
+      case "_STEP6_COMPLETE": {
+        // Safety net: fired from background.js's finally block — ensures buttons
+        // are always re-enabled even if an exception skipped PLAN_SUMMARY.
+        analyzeBtn.disabled = false;
+        if (demoBtn) demoBtn.disabled = false;
+        break;
+      }
+
       case "ERROR": {
         console.error("[Popup Error][Pipeline Step Failed]:", msg.step, msg.error);
         setStatus(true, `[ERROR in ${msg.step || "Pipeline"}] ${msg.error}`);
