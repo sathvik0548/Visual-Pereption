@@ -100,6 +100,15 @@ app.get([
   res.sendFile(path.join(__dirname, "demo", "article-list.html"));
 });
 
+app.get([
+  "/demo/google-form.html",
+  "/demo/google-form",
+  "/google-form.html",
+  "/google-form"
+], (req, res) => {
+  res.sendFile(path.join(__dirname, "demo", "google-form.html"));
+});
+
 let demoMetrics = {
   runs: 0,
   totalLatency: 0,

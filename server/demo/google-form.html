@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Google Forms Demo — Student Registration</title>
+    <style>
+      body {
+        font-family: Roboto, Arial, sans-serif;
+        background: #f0ebf8;
+        margin: 0;
+        padding: 40px 20px;
+        color: #202124;
+      }
+      .freebirdFormviewerViewFormCard {
+        max-width: 640px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        padding: 24px;
+      }
+      .form-header {
+        border-top: 10px solid #673ab7;
+        margin: -24px -24px 24px -24px;
+        padding: 24px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+      }
+      .form-header h1 {
+        margin: 0 0 8px 0;
+        font-size: 28px;
+        font-weight: 400;
+      }
+      .geS5n {
+        margin-bottom: 24px;
+        padding: 20px;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        background: #fff;
+      }
+      .M7eMe {
+        font-size: 16px;
+        font-weight: 500;
+        margin-bottom: 16px;
+      }
+      .whsOnd {
+        width: 100%;
+        max-width: 360px;
+        border: none;
+        border-bottom: 1px solid #dadce0;
+        padding: 8px 0;
+        font-size: 14px;
+        outline: none;
+      }
+      .whsOnd:focus {
+        border-bottom: 2px solid #673ab7;
+      }
+      .SG0epd {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .nWQGrd {
+        display: flex;
+        align-items: center;
+      }
+      .docssharedWizToggleLabeledControl {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .docssharedWizToggleLabeledControl::before {
+        content: "";
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #5f6368;
+        border-radius: 50%;
+        box-sizing: border-box;
+      }
+      .docssharedWizToggleLabeledControl[aria-checked="true"]::before {
+        border-color: #673ab7;
+        background: radial-gradient(circle, #673ab7 40%, transparent 45%);
+      }
+      .exportLabel {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="freebirdFormviewerViewFormCard">
+      <div class="form-header">
+        <h1>Student Registration</h1>
+        <p style="margin:0;color:#5f6368;font-size:14px;">Academic Year 2026-2027 Departmental Enrollment</p>
+      </div>
+      <form id="studentRegistrationForm">
+        <!-- Question 1: Text Question (Name) -->
+        <div role="listitem" class="geS5n">
+          <div role="heading" aria-level="3" class="M7eMe" id="i1">Full Name</div>
+          <div class="AgroD">
+            <div class="Xb9hP">
+              <input type="text" class="whsOnd zHQkBf" jsname="YPqjbf" autocomplete="off" tabindex="0"
+                     aria-labelledby="i1" dir="auto" data-initial-value="" badinput="false">
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 2: Multiple Choice Radio Group (Department) -->
+        <div role="listitem" class="geS5n">
+          <div role="heading" aria-level="3" class="M7eMe" id="i5">Department</div>
+          <div role="radiogroup" aria-labelledby="i5" class="SG0epd">
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="0" data-value="CSE" aria-label="Computer Science & Engineering (CSE)">
+                <div class="exportLabel">
+                  <span class="aDTYNe">Computer Science & Engineering (CSE)</span>
+                </div>
+              </div>
+            </div>
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="-1" data-value="ECE" aria-label="Electronics & Communication (ECE)">
+                <div class="exportLabel">
+                  <span class="aDTYNe">Electronics & Communication (ECE)</span>
+                </div>
+              </div>
+            </div>
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="-1" data-value="MECH" aria-label="Mechanical Engineering (MECH)">
+                <div class="exportLabel">
+                  <span class="aDTYNe">Mechanical Engineering (MECH)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 3: Multiple Choice Radio Group (Year) -->
+        <div role="listitem" class="geS5n">
+          <div role="heading" aria-level="3" class="M7eMe" id="i9">Year of Study</div>
+          <div role="radiogroup" aria-labelledby="i9" class="SG0epd">
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="0" data-value="1st Year" aria-label="1st Year">
+                <div class="exportLabel">
+                  <span class="aDTYNe">1st Year</span>
+                </div>
+              </div>
+            </div>
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="-1" data-value="2nd Year" aria-label="2nd Year">
+                <div class="exportLabel">
+                  <span class="aDTYNe">2nd Year</span>
+                </div>
+              </div>
+            </div>
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="-1" data-value="3rd Year" aria-label="3rd Year">
+                <div class="exportLabel">
+                  <span class="aDTYNe">3rd Year</span>
+                </div>
+              </div>
+            </div>
+            <div class="nWQGrd">
+              <div role="radio" class="docssharedWizToggleLabeledControl" aria-checked="false"
+                   tabindex="-1" data-value="4th Year" aria-label="4th Year">
+                <div class="exportLabel">
+                  <span class="aDTYNe">4th Year</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <script>
+      // Allow clicking radios on page
+      document.querySelectorAll('[role="radio"]').forEach(radio => {
+        radio.addEventListener('click', () => {
+          const group = radio.closest('[role="radiogroup"]');
+          if (group) {
+            group.querySelectorAll('[role="radio"]').forEach(r => r.setAttribute('aria-checked', 'false'));
+          }
+          radio.setAttribute('aria-checked', 'true');
+        });
+      });
+    </script>
+  </body>
+</html>

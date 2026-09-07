@@ -1,0 +1,1031 @@
+{
+  "benchmarkDate": "2026-09-07T09:05:27.871Z",
+  "environment": {
+    "nodeVersion": "v24.16.0",
+    "platform": "darwin",
+    "chromePath": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "serverUrl": "http://localhost:3000"
+  },
+  "runs": {
+    "vendor_registration": [
+      {
+        "run": 1,
+        "page": "vendor-registration.html",
+        "pageId": "vendor_registration",
+        "timestamp": "2026-09-07T09:05:37.215Z",
+        "task": "fill out the vendor registration form",
+        "totalLatencyMs": 9339.5,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 142673,
+        "sentPayloadBytes": 194001,
+        "reductionPercent": -35.98,
+        "piiCount": 8,
+        "piiBreakdown": [
+          {
+            "id": "full_name",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.99,
+            "label": "Authorized Representative Full Name*"
+          },
+          {
+            "id": "aadhaar_number",
+            "agentId": "agent_1",
+            "type": "AADHAAR",
+            "confidence": 0.85,
+            "label": "Aadhaar Number (UIDAI)*"
+          },
+          {
+            "id": "pan_number",
+            "agentId": "agent_2",
+            "type": "PAN",
+            "confidence": 0.99,
+            "label": "Permanent Account Number (PAN)*"
+          },
+          {
+            "id": "gstin_number",
+            "agentId": "agent_3",
+            "type": "GSTIN",
+            "confidence": 0.99,
+            "label": "Goods & Services Tax Identification (GSTIN)"
+          },
+          {
+            "id": "ifsc_code",
+            "agentId": "agent_4",
+            "type": "IFSC",
+            "confidence": 0.99,
+            "label": "Bank IFSC Code*"
+          },
+          {
+            "id": "mobile_number",
+            "agentId": "agent_5",
+            "type": "INDIAN_MOBILE",
+            "confidence": 0.99,
+            "label": "Mobile Number (India)*"
+          },
+          {
+            "id": "email_address",
+            "agentId": "agent_6",
+            "type": "EMAIL",
+            "confidence": 0.99,
+            "label": "Official Email Address*"
+          },
+          {
+            "id": "portal_password",
+            "agentId": "agent_7",
+            "type": "PASSWORD",
+            "confidence": 0.99,
+            "label": "Portal Password*"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 8,
+          "panelMessage": "✓ 0 leaks — 8 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 1276.6,
+          "domScanMs": 8.8,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 3069,
+          "actionExecutionMs": 4890.6
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 12.59,
+          "heapUsedFinalMb": 69.47
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "type",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "type",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "type",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "type",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "type",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_8",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_9",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "page": "vendor-registration.html",
+        "pageId": "vendor_registration",
+        "timestamp": "2026-09-07T09:05:44.621Z",
+        "task": "fill out the vendor registration form",
+        "totalLatencyMs": 6903.7,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 142673,
+        "sentPayloadBytes": 194001,
+        "reductionPercent": -35.98,
+        "piiCount": 8,
+        "piiBreakdown": [
+          {
+            "id": "full_name",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.99,
+            "label": "Authorized Representative Full Name*"
+          },
+          {
+            "id": "aadhaar_number",
+            "agentId": "agent_1",
+            "type": "AADHAAR",
+            "confidence": 0.85,
+            "label": "Aadhaar Number (UIDAI)*"
+          },
+          {
+            "id": "pan_number",
+            "agentId": "agent_2",
+            "type": "PAN",
+            "confidence": 0.99,
+            "label": "Permanent Account Number (PAN)*"
+          },
+          {
+            "id": "gstin_number",
+            "agentId": "agent_3",
+            "type": "GSTIN",
+            "confidence": 0.99,
+            "label": "Goods & Services Tax Identification (GSTIN)"
+          },
+          {
+            "id": "ifsc_code",
+            "agentId": "agent_4",
+            "type": "IFSC",
+            "confidence": 0.99,
+            "label": "Bank IFSC Code*"
+          },
+          {
+            "id": "mobile_number",
+            "agentId": "agent_5",
+            "type": "INDIAN_MOBILE",
+            "confidence": 0.99,
+            "label": "Mobile Number (India)*"
+          },
+          {
+            "id": "email_address",
+            "agentId": "agent_6",
+            "type": "EMAIL",
+            "confidence": 0.99,
+            "label": "Official Email Address*"
+          },
+          {
+            "id": "portal_password",
+            "agentId": "agent_7",
+            "type": "PASSWORD",
+            "confidence": 0.99,
+            "label": "Portal Password*"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 8,
+          "panelMessage": "✓ 0 leaks — 8 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 977.6,
+          "domScanMs": 4.8,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 1030.2,
+          "actionExecutionMs": 4872.3
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 6.92,
+          "heapUsedFinalMb": 55.85
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "type",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "type",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "type",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "type",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "type",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_8",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_9",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "page": "vendor-registration.html",
+        "pageId": "vendor_registration",
+        "timestamp": "2026-09-07T09:05:51.797Z",
+        "task": "fill out the vendor registration form",
+        "totalLatencyMs": 6674.2,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 142673,
+        "sentPayloadBytes": 194001,
+        "reductionPercent": -35.98,
+        "piiCount": 8,
+        "piiBreakdown": [
+          {
+            "id": "full_name",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.99,
+            "label": "Authorized Representative Full Name*"
+          },
+          {
+            "id": "aadhaar_number",
+            "agentId": "agent_1",
+            "type": "AADHAAR",
+            "confidence": 0.85,
+            "label": "Aadhaar Number (UIDAI)*"
+          },
+          {
+            "id": "pan_number",
+            "agentId": "agent_2",
+            "type": "PAN",
+            "confidence": 0.99,
+            "label": "Permanent Account Number (PAN)*"
+          },
+          {
+            "id": "gstin_number",
+            "agentId": "agent_3",
+            "type": "GSTIN",
+            "confidence": 0.99,
+            "label": "Goods & Services Tax Identification (GSTIN)"
+          },
+          {
+            "id": "ifsc_code",
+            "agentId": "agent_4",
+            "type": "IFSC",
+            "confidence": 0.99,
+            "label": "Bank IFSC Code*"
+          },
+          {
+            "id": "mobile_number",
+            "agentId": "agent_5",
+            "type": "INDIAN_MOBILE",
+            "confidence": 0.99,
+            "label": "Mobile Number (India)*"
+          },
+          {
+            "id": "email_address",
+            "agentId": "agent_6",
+            "type": "EMAIL",
+            "confidence": 0.99,
+            "label": "Official Email Address*"
+          },
+          {
+            "id": "portal_password",
+            "agentId": "agent_7",
+            "type": "PASSWORD",
+            "confidence": 0.99,
+            "label": "Portal Password*"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 8,
+          "panelMessage": "✓ 0 leaks — 8 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 752.7,
+          "domScanMs": 3.1,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 1036.7,
+          "actionExecutionMs": 4869
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": -0.83,
+          "heapUsedFinalMb": 55.03
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "type",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "type",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "type",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "type",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "type",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_8",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_9",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      }
+    ],
+    "google_form": [
+      {
+        "run": 1,
+        "page": "google-form.html",
+        "pageId": "google_form",
+        "timestamp": "2026-09-07T09:05:59.515Z",
+        "task": "fill the student registration form for Rajesh Kumar, Department: CSE, Year: 3rd Year",
+        "totalLatencyMs": 7216.7,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 43486,
+        "sentPayloadBytes": 60229,
+        "reductionPercent": -38.5,
+        "piiCount": 1,
+        "piiBreakdown": [
+          {
+            "id": "agent_0",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.72,
+            "label": "Full Name"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 1,
+          "panelMessage": "✓ 0 leaks — 1 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 948.3,
+          "domScanMs": 5.9,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 1341.7,
+          "actionExecutionMs": 4884.3
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 3.5,
+          "heapUsedFinalMb": 58.54
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "select_choice",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "select_choice",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "select_choice",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "select_choice",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "select_choice",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "select_choice",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "select_choice",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "page": "google-form.html",
+        "pageId": "google_form",
+        "timestamp": "2026-09-07T09:06:05.714Z",
+        "task": "fill the student registration form for Rajesh Kumar, Department: CSE, Year: 3rd Year",
+        "totalLatencyMs": 5697,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 43486,
+        "sentPayloadBytes": 60229,
+        "reductionPercent": -38.5,
+        "piiCount": 1,
+        "piiBreakdown": [
+          {
+            "id": "agent_0",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.72,
+            "label": "Full Name"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 1,
+          "panelMessage": "✓ 0 leaks — 1 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 742.1,
+          "domScanMs": 1.8,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 53.5,
+          "actionExecutionMs": 4887.5
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 4.68,
+          "heapUsedFinalMb": 63.22
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "select_choice",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "select_choice",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "select_choice",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "select_choice",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "select_choice",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "select_choice",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "select_choice",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "page": "google-form.html",
+        "pageId": "google_form",
+        "timestamp": "2026-09-07T09:06:11.882Z",
+        "task": "fill the student registration form for Rajesh Kumar, Department: CSE, Year: 3rd Year",
+        "totalLatencyMs": 5665.4,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 43486,
+        "sentPayloadBytes": 60229,
+        "reductionPercent": -38.5,
+        "piiCount": 1,
+        "piiBreakdown": [
+          {
+            "id": "agent_0",
+            "agentId": "agent_0",
+            "type": "NAME",
+            "confidence": 0.72,
+            "label": "Full Name"
+          }
+        ],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 1,
+          "panelMessage": "✓ 0 leaks — 1 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 713.3,
+          "domScanMs": 3.5,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 60.5,
+          "actionExecutionMs": 4874.1
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": -1.49,
+          "heapUsedFinalMb": 61.76
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "type",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "select_choice",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "select_choice",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "select_choice",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "select_choice",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "select_choice",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "select_choice",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "select_choice",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      }
+    ],
+    "article_list": [
+      {
+        "run": 1,
+        "page": "article-list.html",
+        "pageId": "article_list",
+        "timestamp": "2026-09-07T09:06:20.131Z",
+        "task": "Dismiss the cookie banner, then click Read More on the article about James Webb Space Telescope discovering water vapor on an exoplanet.",
+        "totalLatencyMs": 7746.8,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 132387,
+        "sentPayloadBytes": 179338,
+        "reductionPercent": -35.46,
+        "piiCount": 0,
+        "piiBreakdown": [],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 0,
+          "panelMessage": "✓ 0 leaks — 0 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 719.7,
+          "domScanMs": 2.1,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 2128.9,
+          "actionExecutionMs": 4880.2
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 7.93,
+          "heapUsedFinalMb": 69.72
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "click",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "click",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "click",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "click",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "click",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "click",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "page": "article-list.html",
+        "pageId": "article_list",
+        "timestamp": "2026-09-07T09:06:27.333Z",
+        "task": "Dismiss the cookie banner, then click Read More on the article about James Webb Space Telescope discovering water vapor on an exoplanet.",
+        "totalLatencyMs": 6699.9,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 132387,
+        "sentPayloadBytes": 179338,
+        "reductionPercent": -35.46,
+        "piiCount": 0,
+        "piiBreakdown": [],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 0,
+          "panelMessage": "✓ 0 leaks — 0 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 778,
+          "domScanMs": 2.2,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 1023.4,
+          "actionExecutionMs": 4884.2
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": 0.83,
+          "heapUsedFinalMb": 70.56
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "click",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "click",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "click",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "click",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "click",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "click",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "page": "article-list.html",
+        "pageId": "article_list",
+        "timestamp": "2026-09-07T09:06:34.440Z",
+        "task": "Dismiss the cookie banner, then click Read More on the article about James Webb Space Telescope discovering water vapor on an exoplanet.",
+        "totalLatencyMs": 6604.9,
+        "visionInferencePasses": 1,
+        "rawScreenshotBytes": 132387,
+        "sentPayloadBytes": 179338,
+        "reductionPercent": -35.46,
+        "piiCount": 0,
+        "piiBreakdown": [],
+        "leakCheck": {
+          "passed": true,
+          "leaksDetected": false,
+          "leaksFoundCount": 0,
+          "checkedRegionsCount": 0,
+          "panelMessage": "✓ 0 leaks — 0 masked region(s) verified black"
+        },
+        "timingBreakdown": {
+          "captureMs": 719.6,
+          "domScanMs": 2.3,
+          "leakVerificationMs": 0,
+          "serverLatencyMs": 971.6,
+          "actionExecutionMs": 4894.5
+        },
+        "clientResourceUsage": {
+          "heapUsedMbDelta": -4.21,
+          "heapUsedFinalMb": 66.36
+        },
+        "planStepsCount": 8,
+        "planStepsExecuted": [
+          {
+            "step": 1,
+            "action": "click",
+            "target_id": "agent_0",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 2,
+            "action": "click",
+            "target_id": "agent_1",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 3,
+            "action": "click",
+            "target_id": "agent_2",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 4,
+            "action": "click",
+            "target_id": "agent_3",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 5,
+            "action": "click",
+            "target_id": "agent_4",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 6,
+            "action": "click",
+            "target_id": "agent_5",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 7,
+            "action": "click",
+            "target_id": "agent_6",
+            "ok": true,
+            "mutated": true
+          },
+          {
+            "step": 8,
+            "action": "click",
+            "target_id": "agent_7",
+            "ok": true,
+            "mutated": true
+          }
+        ]
+      }
+    ]
+  }
+}
