@@ -18,6 +18,9 @@
 
   "host_permissions": [
     "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "http://localhost:11434/*",
+    "http://127.0.0.1:11434/*",
     "https://huggingface.co/*",
     "https://*.huggingface.co/*",
     "https://cdn-lfs.huggingface.co/*",

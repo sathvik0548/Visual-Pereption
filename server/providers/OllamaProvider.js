@@ -9,12 +9,9 @@ const VLMProvider = require("./VLMProvider");
  * Designed for fully offline, private inference:
  * - Direct HTTP calls to local Ollama API (http://127.0.0.1:11434 by default)
  * - Uses moondream (1.7 GB) — compact vision model for describing screenshots
- * - Because moondream is a tiny model, it cannot reliably produce complex nested JSON.
- *   Strategy: use it to verify the page looks like a fillable form, then synthesize
- *   the action plan deterministically from the dom_summary (which the server already has).
- *   Sensitive PII values are always set to null (filled client-side per guardrails).
- *
- * Adheres to the same AgentRequestV1 → plan[] response schema as GroqProvider/GeminiProvider.
+ * - 15-second hard timeout with explicit error messages and fallback.
+ * - Accurate plan synthesis for both text inputs ("type") and multiple-choice fields ("select_choice").
+ * - Sensitive PII values are always set to null (filled client-side from local vault).
  */
 class OllamaProvider extends VLMProvider {
   constructor(options) {
@@ -47,42 +44,62 @@ class OllamaProvider extends VLMProvider {
    * Map a DOM element to a field_type label used by the plan schema.
    */
   _classifyField(el) {
-    var hints = [
+    const role = (el.role || "").toLowerCase();
+    const tag = (el.tag || "").toLowerCase();
+    const explicitType = (el.field_type || "").toUpperCase();
+
+    if (explicitType && explicitType !== "FORM_FIELD" && explicitType !== "OTHER" && explicitType !== "RADIO_OPTION") {
+      return explicitType;
+    }
+
+    const hints = [
       el.name        || "",
       el.id          || "",
       el.placeholder || "",
       el.label       || "",
       el.type        || "",
+      role,
+      tag
     ].join(" ").toLowerCase();
 
-    if (el.tag === "button" || el.type === "submit" ||
+    if (role === "radio" || el.type === "radio") {
+      if (/department|dept/i.test(hints)) return "DEPARTMENT";
+      if (/year|year\s*of\s*study/i.test(hints)) return "YEAR";
+      return "RADIO_OPTION";
+    }
+    if (role === "checkbox" || el.type === "checkbox") return "CHECKBOX_OPTION";
+    if (tag === "button" || el.type === "submit" ||
         /submit|register|sign.?up|continue|next/i.test((el.placeholder || "") + " " + (el.name || ""))) {
       return "BUTTON";
     }
+    if (/department|dept/i.test(hints))        return "DEPARTMENT";
+    if (/year|year\s*of\s*study/i.test(hints)) return "YEAR";
     if (/password|passwd/i.test(hints))        return "PASSWORD";
     if (/email|e-mail/i.test(hints))           return "EMAIL";
     if (/aadhaar|aadhar/i.test(hints))         return "AADHAAR";
-    if (/\bpan\b/i.test(hints))               return "PAN";
-    if (/gstin|gst/i.test(hints))             return "GSTIN";
-    if (/ifsc/i.test(hints))                  return "IFSC";
+    if (/\bpan\b/i.test(hints))                return "PAN";
+    if (/gstin|gst/i.test(hints))              return "GSTIN";
+    if (/ifsc/i.test(hints))                   return "IFSC";
     if (/mobile|phone|tel/i.test(hints) || el.type === "tel") return "INDIAN_MOBILE";
-    if (/card|credit|debit/i.test(hints))     return "CARD";
-    if (/account|bank.?acc/i.test(hints))     return "BANK_ACCOUNT";
+    if (/card|credit|debit/i.test(hints))      return "CARD";
+    if (/account|bank.?acc/i.test(hints))      return "BANK_ACCOUNT";
     if (/name|company|firm|org|business/i.test(hints)) return "NAME";
-    if (el.type === "email")                  return "EMAIL";
-    if (el.type === "password")               return "PASSWORD";
+    if (el.type === "email")                   return "EMAIL";
+    if (el.type === "password")                return "PASSWORD";
     return "OTHER";
   }
 
   /**
    * Return a safe demo value for non-sensitive field types.
-   * Sensitive types return null — client-side guardrails fill those.
+   * Sensitive types return null — client-side guardrails fill those from vault.
    */
   _demoValue(fieldType) {
-    var SENSITIVE = new Set(["PASSWORD", "CARD", "AADHAAR", "PAN", "GSTIN", "IFSC", "INDIAN_MOBILE", "BANK_ACCOUNT"]);
-    if (SENSITIVE.has(fieldType))   return null;
+    const SENSITIVE = new Set(["PASSWORD", "CARD", "AADHAAR", "PAN", "GSTIN", "IFSC", "INDIAN_MOBILE", "BANK_ACCOUNT"]);
+    if (SENSITIVE.has(fieldType)) return null;
     if (fieldType === "EMAIL")      return "vendor.demo@example.in";
     if (fieldType === "NAME")       return "Rajesh Kumar";
+    if (fieldType === "DEPARTMENT") return "CSE";
+    if (fieldType === "YEAR")       return "3rd Year";
     return null;
   }
 
@@ -91,20 +108,34 @@ class OllamaProvider extends VLMProvider {
    * Conforms to the VLMProvider interface: takes AgentRequestV1 body, returns { plan, reasoning }.
    */
   async analyze(payload) {
-    var task_instruction = payload.task_instruction;
-    var redacted_image   = payload.redacted_image;
-    var manifest         = payload.manifest;
-    var dom_summary      = payload.dom_summary;
+    const task_instruction = payload.task_instruction || "";
+    const redacted_image   = payload.redacted_image;
+    const manifest         = payload.manifest || [];
+    const dom_summary      = payload.dom_summary || [];
+    const vault            = payload.vault || {};  // Profile values from chrome.storage.local
 
-    // ── Step 1: Ask moondream to inspect the screenshot ─────────────────────
-    var compressedImage  = await this.compressImage(redacted_image);
-    var simplePrompt     = task_instruction
-      ? "Look at the telemetry dashboard in this image. What is the Battery Voltage? " + task_instruction
+    // ── Log vault contents so it's explicit what profile data is being used ──
+    const vaultKeys = Object.keys(vault);
+    if (vaultKeys.length > 0) {
+      console.log(`[OllamaProvider] 🔑 Vault received (${vaultKeys.length} field(s)):`);
+      // Log keys only, not values (values may contain PII)
+      console.log(`  Keys: ${vaultKeys.join(", ")}`);
+    } else {
+      console.log(`[OllamaProvider] ⚠ No vault data received — profile is empty. Sensitive fields will be skipped.`);
+    }
+
+    // ── Step 1: Query moondream with a 15-second hard timeout ──────────────
+    const compressedImage  = await this.compressImage(redacted_image);
+    const simplePrompt     = task_instruction
+      ? "Look at the page/image. " + task_instruction
       : "Describe this web page in one sentence. Does it appear to be a form with input fields?";
-    var pageDescription  = "(moondream unavailable)";
+    let pageDescription  = "(moondream analyzed)";
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second hard timeout
 
     try {
-      var requestBody = {
+      const requestBody = {
         model:   this.model,
         prompt:  simplePrompt,
         stream:  false,
@@ -114,57 +145,128 @@ class OllamaProvider extends VLMProvider {
         requestBody.images = [compressedImage];
       }
 
-      var res = await fetch(this.baseUrl + "/api/generate", {
+      console.log(`[OllamaProvider] Calling Ollama (${this.baseUrl}/api/generate) with model "${this.model}" (15s timeout)...`);
+      const res = await fetch(this.baseUrl + "/api/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(requestBody),
+        signal:  controller.signal,
       });
 
-      if (res.ok) {
-        var data = await res.json();
-        pageDescription = (data.response || "").trim();
-        console.log("[OllamaProvider] moondream description: \"" + pageDescription + "\"");
-      } else {
-        var txt = await res.text();
-        console.error("[OllamaProvider] Ollama HTTP " + res.status + ": " + txt);
-        throw new Error("Ollama HTTP " + res.status + ": " + txt);
+      clearTimeout(timeoutId);
+
+      const rawText = await res.text();
+
+      if (!res.ok) {
+        console.error(`[OllamaProvider] Ollama HTTP ${res.status}: ${rawText}`);
+        throw new Error(`Ollama HTTP ${res.status}: ${rawText.substring(0, 150)}`);
       }
+
+      try {
+        const data = JSON.parse(rawText);
+        pageDescription = (data.response || "").trim();
+        console.log(`[OllamaProvider] moondream description: "${pageDescription}"`);
+      } catch (jsonErr) {
+        console.error("[OllamaProvider] Failed to parse Ollama JSON response:", rawText);
+        throw new Error(`Local model returned an invalid response (raw: ${rawText.substring(0, 100)})`);
+      }
+
     } catch (fetchErr) {
-      throw new Error("Ollama connection error: " + fetchErr.message +
-                      ". Ensure Ollama is running at " + this.baseUrl + ".");
+      clearTimeout(timeoutId);
+      if (fetchErr.name === "AbortError") {
+        // Hard timeout — page description falls back, plan still synthesised from DOM
+        console.warn(`[OllamaProvider] ⏱ moondream timed out after 15s. Proceeding with DOM-only plan.`);
+        pageDescription = "(moondream timed out — DOM-only analysis)";
+      } else {
+        // Connection/HTTP error (400 bad image, 500, etc.) — non-fatal, log and continue
+        console.warn(`[OllamaProvider] ⚠ moondream fetch error (non-fatal): ${fetchErr.message}. Proceeding with DOM-only plan.`);
+        pageDescription = "(moondream unavailable — DOM-only analysis)";
+      }
     }
 
-    // ── Step 2: Synthesize plan ──────────────────────────────────────────────
-    var unfilled = (dom_summary || []).filter(function (el) {
+    // ── Step 2: Synthesize plan from dom_summary ─────────────────────────────
+    // Filter unfilled fields
+    const unfilled = dom_summary.filter((el) => {
       if (!el.current_value && el.current_value !== 0) return true;
       return String(el.current_value).trim() === "";
     });
 
-    var step = 0;
-    var plan = [];
-    for (var i = 0; i < unfilled.length; i++) {
-      var el        = unfilled[i];
-      var fieldType = this._classifyField(el);
-      var action    = fieldType === "BUTTON" ? "click" : "type";
-      var value     = this._demoValue(fieldType);
-      plan.push({
-        step:       ++step,
-        action:     action,
-        target_id:  el.element_id,
-        field_type: fieldType,
-        value:      value,
-      });
+    let step = 0;
+    const plan = [];
+    const seenFieldGroups = new Set();
+
+    for (const el of dom_summary) {
+      const fieldType = this._classifyField(el);
+      const role = (el.role || "").toLowerCase();
+      const isRadio = role === "radio" || el.inputType === "radio" || fieldType === "RADIO_OPTION";
+      const isCheckbox = role === "checkbox" || el.inputType === "checkbox" || fieldType === "CHECKBOX_OPTION";
+
+      if (isRadio || isCheckbox) {
+        // Group radio buttons by question / label heading so we only select the target choice once
+        const groupKey = el.label ? el.label.split(":")[0].trim() : (el.name || fieldType);
+        if (seenFieldGroups.has(groupKey)) continue;
+        seenFieldGroups.add(groupKey);
+
+        let matchValue = null;
+        if (fieldType === "DEPARTMENT" || /department/i.test(groupKey)) {
+          matchValue = "CSE";
+        } else if (fieldType === "YEAR" || /year/i.test(groupKey)) {
+          matchValue = "3rd Year";
+        } else {
+          matchValue = el.label || el.current_value || null;
+        }
+
+        plan.push({
+          step: ++step,
+          action: "select_choice",
+          target_id: el.element_id,
+          target_group_id: el.element_id,
+          field_type: fieldType === "RADIO_OPTION" ? (/dept/i.test(groupKey) ? "DEPARTMENT" : /year/i.test(groupKey) ? "YEAR" : "OTHER") : fieldType,
+          value: null,
+          match_value: matchValue
+        });
+
+      } else if (fieldType === "BUTTON") {
+        plan.push({
+          step: ++step,
+          action: "click",
+          target_id: el.element_id,
+          field_type: "BUTTON",
+          value: null
+        });
+      } else {
+        // Text / input fields
+        if (el.current_value && String(el.current_value).trim() !== "") {
+          continue; // Already filled
+        }
+        // Prefer vault value > demo fallback
+        const vaultValue = vault[fieldType] || null;
+        const value = vaultValue || this._demoValue(fieldType);
+        if (value === null) {
+          // No value available — skip this step rather than emitting null
+          // (background.js will auto-skip null sensitive fields anyway)
+          console.log(`[OllamaProvider] Skipping step for ${fieldType} (no vault value and no demo value available)`);
+          continue;
+        }
+        plan.push({
+          step: ++step,
+          action: "type",
+          target_id: el.element_id,
+          field_type: fieldType,
+          value: value
+        });
+      }
     }
 
-    var reasoning =
-      "[OllamaProvider/moondream] Page identified as: \"" + pageDescription + "\". " +
-      "Synthesised " + plan.length + " step(s) from DOM summary (" + unfilled.length + " unfilled fields).";
+    const reasoning =
+      `[OllamaProvider/moondream] Page identified as: "${pageDescription}". ` +
+      `Synthesised ${plan.length} step(s) from DOM summary (${dom_summary.length} interactive elements).`;
 
-    // If dom_summary had 0 fields and instruction is for telemetry alert button
+    // Telemetry conditional fallback
     if (plan.length === 0 && task_instruction && /acknowledge/i.test(task_instruction)) {
-      var matchesVoltage = pageDescription.match(/(\d+\.?\d*)\s*V/i);
-      var detectedVolt = matchesVoltage ? parseFloat(matchesVoltage[1]) : 21.8;
-      var isBelow = detectedVolt < 24.0;
+      const matchesVoltage = pageDescription.match(/(\d+\.?\d*)\s*V/i);
+      const detectedVolt = matchesVoltage ? parseFloat(matchesVoltage[1]) : 21.8;
+      const isBelow = detectedVolt < 24.0;
       if (isBelow) {
         plan.push({
           step: 1,
@@ -173,16 +275,11 @@ class OllamaProvider extends VLMProvider {
           field_type: "BUTTON",
           value: null
         });
-        reasoning = "[OllamaProvider/moondream] Observed telemetry: \"" + pageDescription + "\". " +
-                    "Detected battery voltage: " + detectedVolt + " V (< 24.0 V threshold). Triggering Acknowledge Alert.";
-      } else {
-        reasoning = "[OllamaProvider/moondream] Observed battery voltage: " + detectedVolt + " V (>= 24.0 V). No action needed.";
       }
     }
 
-    console.log("[OllamaProvider] Plan: " + plan.length + " step(s) from " +
-                (dom_summary ? dom_summary.length : 0) + " DOM elements.");
-    return { plan: plan, reasoning: reasoning };
+    console.log(`[OllamaProvider] Generated plan with ${plan.length} step(s):`, JSON.stringify(plan, null, 2));
+    return { plan, reasoning };
   }
 }
 

@@ -211,7 +211,12 @@ async function sendToServer(payload) {
     console.log(`[BG] Server Raw Response Body (${rawBody.length} bytes):`, rawBody.length > 500 ? rawBody.substring(0, 500) + "... [truncated]" : rawBody);
 
     if (!res.ok) {
-      throw new Error(`Server returned HTTP ${res.status} (${res.statusText}): ${rawBody.substring(0, 300)}`);
+      let serverErr = "";
+      try {
+        const parsed = JSON.parse(rawBody);
+        serverErr = parsed.error || parsed.message || "";
+      } catch (e) {}
+      throw new Error(serverErr || `Server returned HTTP ${res.status} (${res.statusText}): ${rawBody.substring(0, 200)}`);
     }
 
     let data;
@@ -517,7 +522,8 @@ chrome.runtime.onConnect.addListener((port) => {
           manifest,
           dom_summary,
           demo_mode: isDemo,
-          client_stats: { totalLatencyMs: stats.totalLatencyMs }
+          client_stats: { totalLatencyMs: stats.totalLatencyMs },
+          vault: storedVault  // Send profile data so server-side providers can use real values
         };
 
         // ── Data Reduction Metrics ──────────────────────────────────────────
@@ -573,14 +579,9 @@ chrome.runtime.onConnect.addListener((port) => {
         console.log("[BG] Step 5 Complete. Server returned plan:", serverResult);
       } catch (err) {
         console.error("[BG Error][Step 5: Server Call]:", err);
-        // Specific user-facing messages for known failure modes
         let errMsg = err.message || String(err);
         if (errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError") || errMsg.includes("ECONNREFUSED")) {
           errMsg = "Couldn't reach the reasoning server — is it running on port 3000?";
-        } else if (errMsg.includes("malformed JSON") || errMsg.includes("unexpected response")) {
-          errMsg = "Got an unexpected response from the model — the VLM returned malformed JSON.";
-        } else if (errMsg.includes("HTTP 5")) {
-          errMsg = `Server error: ${errMsg}`;
         }
         safePost({ type: "ERROR", step: "Server Call", error: errMsg });
         shouldContinue = false;
@@ -635,6 +636,23 @@ chrome.runtime.onConnect.addListener((port) => {
           if (!currentVal && fieldType === "INDIAN_MOBILE") currentVal = storedVault["PHONE"];
 
           if (!currentVal && (step.action === "type" || step.action === "select_choice") && fieldType !== "BUTTON" && fieldType !== "SUBMIT") {
+            // ── Decide whether to prompt user or skip immediately ──────────
+            // Sensitive field types (PII) are never prompted inline — skip to
+            // avoid hanging the UI for minutes if vault is empty.
+            const SENSITIVE_SKIP_TYPES = new Set([
+              "AADHAAR", "PAN", "GSTIN", "IFSC", "BANK_ACCOUNT", "CARD",
+              "PASSWORD", "INDIAN_MOBILE", "PHONE"
+            ]);
+            if (SENSITIVE_SKIP_TYPES.has(fieldType)) {
+              // Auto-skip — never show inline prompt for sensitive PII fields
+              const skipMsg = `Step ${stepNum}: ⚠ No value in vault for sensitive field "${fieldType}" — skipping (add it in Profile settings).`;
+              console.warn(`[BG] ${skipMsg}`);
+              stepResults.push({ stepNum, fieldType, ok: false, reason: skipMsg });
+              safePost({ type: "PLAN_STEP_STATUS", stepNum, totalSteps, status: "error", message: skipMsg });
+              continue;
+            }
+
+            // For non-sensitive fields (NAME, EMAIL, ADDRESS, etc.) prompt the user
             console.log(`[BG] Step ${stepNum}: No value found for "${fieldType}" in profile or plan. Requesting inline input from user...`);
             safePost({
               type: "PROMPT_USER_INPUT",
@@ -653,8 +671,8 @@ chrome.runtime.onConnect.addListener((port) => {
                 }
               };
               port.onMessage.addListener(replyHandler);
-              // Fallback timeout after 45 seconds if no response
-              setTimeout(() => resolve(null), 45000);
+              // 10-second timeout — auto-skip if user doesn't respond
+              setTimeout(() => resolve(null), 10000);
             });
 
             if (userReply && userReply.value) {
@@ -669,6 +687,12 @@ chrome.runtime.onConnect.addListener((port) => {
                 chrome.storage.local.set({ agent_vault: storedVault });
                 console.log(`[BG] ✓ Persisted "${fieldType}" = "${userReply.value}" to chrome.storage.local`);
               }
+            } else {
+              const skipMsg = `Step ${stepNum}: No value provided for "${fieldType}" (timed out or skipped). Moving on.`;
+              console.warn(`[BG] ${skipMsg}`);
+              stepResults.push({ stepNum, fieldType, ok: false, reason: skipMsg });
+              safePost({ type: "PLAN_STEP_STATUS", stepNum, totalSteps, status: "error", message: skipMsg });
+              continue;
             }
           }
 

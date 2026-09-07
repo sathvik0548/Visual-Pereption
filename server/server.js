@@ -109,13 +109,14 @@ app.post("/analyze", async (req, res) => {
     return res.status(400).json({ error: `Invalid AgentRequestV1 payload: ${err.message}` });
   }
 
-  const { version, task_instruction, redacted_image, manifest, dom_summary, demo_mode, client_stats } = req.body;
+  const { version, task_instruction, redacted_image, manifest, dom_summary, demo_mode, client_stats, vault } = req.body;
 
   console.log(`\n[Server] /analyze received AgentRequestV1`);
   console.log(`  Task Instruction : ${task_instruction}`);
   console.log(`  Redacted Image   : ${redacted_image ? `${redacted_image.length} base64 chars` : "missing"}`);
   console.log(`  Manifest regions : ${manifest.length}`);
   console.log(`  DOM summary items: ${dom_summary.length}`);
+  console.log(`  Vault fields     : ${vault ? Object.keys(vault).join(", ") || "(empty)" : "(not sent)"}`);
 
   console.log(`\n========================================================`);
   console.log(`[Server][DEBUG] === RECEIVED dom_summary (${dom_summary.length} items) ===`);
@@ -161,26 +162,28 @@ app.post("/analyze", async (req, res) => {
     
     return res.json(planResult);
   } catch (error) {
-    // Specific user-facing error messages for known failure modes
-    const msg = error.message || String(error);
+    const msg = (error && error.message) ? error.message : String(error);
     let userMsg;
-    if (msg.includes("fetch") || msg.includes("ECONNREFUSED") || msg.includes("network") || msg.includes("connection error")) {
+    // Specific user-facing error messages for known failure modes
+    if (msg.includes("didn't respond in time") || msg.includes("Timeout") || msg.includes("timeout") || msg.includes("AbortError")) {
+      userMsg = "Local Ollama didn't respond in time \u2014 check it's running with `ollama serve`";
+    } else if (msg.includes("invalid response") || msg.includes("malformed JSON") || msg.includes("Unexpected token")) {
+      userMsg = "Local model returned an invalid response";
+    } else if (msg.includes("fetch") || msg.includes("ECONNREFUSED") || msg.includes("network") || msg.includes("connection error")) {
       userMsg = activeMode === "offline" 
-        ? "Couldn't reach local Ollama on http://127.0.0.1:11434 — check Ollama is running."
-        : "Couldn't reach the reasoning server — check your internet or provider status.";
-    } else if (msg.includes("json") || msg.includes("JSON") || msg.includes("parse")) {
-      userMsg = "Got an unexpected response from the model — the VLM returned malformed JSON.";
+        ? "Couldn't reach local Ollama on http://127.0.0.1:11434 \u2014 check Ollama is running with `ollama serve`."
+        : "Couldn't reach the reasoning server \u2014 check your internet or provider status.";
     } else if (msg.includes("4MB") || msg.includes("Too Large")) {
-      userMsg = "Image payload too large — reduce screenshot size or increase compression.";
+      userMsg = "Image payload too large \u2014 reduce screenshot size or increase compression.";
     } else if (msg.includes("rate limit") || msg.includes("429")) {
-      userMsg = "Rate limit reached on cloud provider — wait a moment and retry.";
+      userMsg = "Rate limit reached on cloud provider \u2014 wait a moment and retry.";
     } else if (msg.includes("API key") || msg.includes("401")) {
       userMsg = "Invalid or missing API key in server/.env.";
     } else {
       userMsg = msg;
     }
     console.error(`[Server] VLM analysis failed:`, error);
-    return res.status(500).json({ error: `VLM error: ${userMsg}` });
+    return res.status(500).json({ error: userMsg });
   }
 });
 
