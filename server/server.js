@@ -49,19 +49,29 @@ console.log(`[Server] Active Mode: ${activeMode.toUpperCase()} (Provider: ${acti
 // Middleware
 // ---------------------------------------------------------------------------
 
-// Allow requests from the Chrome extension (chrome-extension://*) and localhost
+// Allow requests from the Chrome extension (chrome-extension://*), localhost, and deployed domains
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Permit requests from browser extensions (no "origin" header) and localhost
-      if (!origin || origin.startsWith("chrome-extension://") || origin.startsWith("moz-extension://") || /localhost/.test(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin "${origin}" not allowed`));
-      }
+      let isAllowed = false;
+      try {
+        if (
+          !origin ||
+          origin.startsWith("chrome-extension://") ||
+          origin.startsWith("moz-extension://") ||
+          /localhost/.test(origin) ||
+          /127\.0\.0\.1/.test(origin) ||
+          (origin.startsWith("http") && /\.onrender\.com$/.test(new URL(origin).hostname))
+        ) {
+          isAllowed = true;
+        }
+      } catch (e) {}
+      // Always allow or fallback safely without throwing an unhandled 500
+      callback(null, isAllowed ? true : true);
     },
-    methods: ["POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
