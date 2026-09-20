@@ -254,10 +254,24 @@ app.get("/health", (_req, res) => res.json({ status: "ok", mode: activeMode }));
 // Start
 // ---------------------------------------------------------------------------
 app.listen(PORT, () => {
-  console.log(`\n🚀  Browser Agent Server running on http://localhost:${PORT}`);
-  console.log(`    Mode: ${activeMode.toUpperCase()} (${activeMode === "offline" ? "Local Ollama" : "Cloud Groq"})`);
-  console.log(`    POST http://localhost:${PORT}/analyze`);
-  console.log(`    GET  http://localhost:${PORT}/provider`);
-  console.log(`    GET  http://localhost:${PORT}/health\n`);
+  console.log(`
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│       🚀  PRIVACY-PRESERVING REASONING SERVER ACTIVE        │
+│                                                             │
+│  Status   : LISTENING ON PORT ${PORT}                          │
+│  Base URL : http://localhost:${PORT}                           │
+│  Mode     : ${activeMode.toUpperCase().padEnd(7)} (${activeMode === "offline" ? "Local Ollama" : "Cloud Groq (Qwen-27B)"})       │
+│                                                             │
+│  Endpoints:                                                 │
+│    • POST http://localhost:${PORT}/analyze                     │
+│    • GET  http://localhost:${PORT}/provider                    │
+│    • GET  http://localhost:${PORT}/health                      │
+│                                                             │
+│  Demo Page:                                                 │
+│    • http://localhost:${PORT}/demo/vendor-registration.html    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+`);
 });
 
