@@ -246,8 +246,22 @@ app.post("/provider", (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Health check
+// Root friendly status & Health check
 // ---------------------------------------------------------------------------
+app.get("/", (_req, res) => {
+  res.json({
+    status: "Browser Agent Server running",
+    mode: activeMode,
+    endpoints: [
+      "/health",
+      "/analyze",
+      "/provider",
+      "/demo/vendor-registration.html",
+      "/demo/telemetry-dashboard.html"
+    ]
+  });
+});
+
 app.get("/health", (_req, res) => res.json({ status: "ok", mode: activeMode }));
 
 // ---------------------------------------------------------------------------
