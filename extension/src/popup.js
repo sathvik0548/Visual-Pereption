@@ -9,6 +9,7 @@
  */
 
 import { PII_COLORS } from "./pii.js";
+import { getBaseServerUrl, setBaseServerUrl, DEFAULT_SERVER_URL } from "./serverConfig.js";
 
 const analyzeBtn = document.getElementById("analyzeBtn");
 const demoBtn    = document.getElementById("demoBtn");
@@ -16,13 +17,17 @@ const taskInput  = document.getElementById("taskInput");
 const statusEl   = document.getElementById("statusText");
 const canvasWrap = document.getElementById("canvasWrap");
 const canvas     = document.getElementById("debugCanvas");
-const legendEl   = document.getElementById("legend");
+    const legendEl   = document.getElementById("legend");
 const piiTable   = document.getElementById("piiTable");
 const modeSelect = document.getElementById("modeSelect");
 const modeBadge  = document.getElementById("modeStatusBadge");
 const modeDot    = document.getElementById("modeStatusDot");
 const modeText   = document.getElementById("modeStatusText");
 const openVaultBtn = document.getElementById("openVaultBtn");
+const serverUrlInput = document.getElementById("serverUrlInput");
+const saveServerBtn  = document.getElementById("saveServerBtn");
+const resetServerBtn = document.getElementById("resetServerBtn");
+const serverUrlStatus = document.getElementById("serverUrlStatus");
 const ctx        = canvas.getContext("2d");
 
 if (openVaultBtn) {
@@ -31,7 +36,36 @@ if (openVaultBtn) {
   });
 }
 
-const SERVER_PROVIDER_URL = "http://localhost:3000/provider";
+// ---------------------------------------------------------------------------
+// Server URL Configuration & Persistence
+// ---------------------------------------------------------------------------
+async function initServerUrlUI() {
+  const activeUrl = await getBaseServerUrl();
+  if (serverUrlInput) serverUrlInput.value = activeUrl;
+  if (serverUrlStatus) serverUrlStatus.textContent = `Active: ${activeUrl}`;
+}
+
+if (saveServerBtn && serverUrlInput) {
+  saveServerBtn.addEventListener("click", async () => {
+    const rawVal = serverUrlInput.value.trim();
+    const saved = await setBaseServerUrl(rawVal);
+    if (serverUrlStatus) serverUrlStatus.textContent = `Active: ${saved}`;
+    setStatus(false, `[SERVER] Updated active endpoint to ${saved}`);
+    await fetchProviderStatus();
+  });
+}
+
+if (resetServerBtn) {
+  resetServerBtn.addEventListener("click", async () => {
+    const reset = await setBaseServerUrl("");
+    if (serverUrlInput) serverUrlInput.value = reset;
+    if (serverUrlStatus) serverUrlStatus.textContent = `Active: ${reset}`;
+    setStatus(false, `[SERVER] Reset endpoint to default (${DEFAULT_SERVER_URL})`);
+    await fetchProviderStatus();
+  });
+}
+
+initServerUrlUI();
 
 // ---------------------------------------------------------------------------
 // Provider Mode Status & Switcher
@@ -60,7 +94,8 @@ function updateModeUI(mode, customText) {
 
 async function fetchProviderStatus() {
   try {
-    const res = await fetch(SERVER_PROVIDER_URL);
+    const baseUrl = await getBaseServerUrl();
+    const res = await fetch(`${baseUrl}/provider`);
     if (res.ok) {
       const data = await res.json();
       updateModeUI(data.mode, data.statusText);
@@ -72,7 +107,8 @@ async function fetchProviderStatus() {
 
 async function setProviderMode(mode) {
   try {
-    const res = await fetch(SERVER_PROVIDER_URL, {
+    const baseUrl = await getBaseServerUrl();
+    const res = await fetch(`${baseUrl}/provider`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode }),

@@ -319,6 +319,19 @@
       <div class="stage" id="stage-act">ACT</div>
     </div>
 
+    <!-- Server Endpoint Setting (Render Default / Overridable) -->
+    <div style="margin-bottom: 10px; padding: 8px 10px; border-radius: 4px; border: 1px solid #cbd5e1; background: #ffffff; font-family: ui-monospace, monospace;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+        <span style="font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Server URL</span>
+        <button id="resetServerBtn" style="font-size: 9px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 3px; background: #f8fafc; color: #64748b; cursor: pointer; text-transform: uppercase; width: auto; flex: none;" title="Reset to default Render URL">Reset</button>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <input type="text" id="serverUrlInput" placeholder="https://visual-pereption.onrender.com" style="flex: 1; padding: 5px 8px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 3px; background: #fff;" />
+        <button id="saveServerBtn" style="width: auto; flex: none; font-size: 10px; padding: 5px 10px; background: #1a1a2e; color: #fff; border-radius: 3px; border: none; cursor: pointer;">Save</button>
+      </div>
+      <div id="serverUrlStatus" style="font-size: 9px; color: #64748b; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Active: https://visual-pereption.onrender.com</div>
+    </div>
+
     <!-- Provider Mode Switcher & Status Badge -->
     <div style="margin-bottom: 14px; padding: 8px 10px; border-radius: 4px; border: 1px solid #cbd5e1; background: #ffffff; font-family: ui-monospace, monospace;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">

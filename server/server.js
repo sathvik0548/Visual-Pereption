@@ -20,7 +20,7 @@ const OllamaProvider    = require("./providers/OllamaProvider");
 const { logMetric } = require("./utils/logger");
 
 const app  = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // API key verification check (without logging key value)
 const groqKey = process.env.GROQ_API_KEY;

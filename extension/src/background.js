@@ -7,7 +7,8 @@
  *   - Relays { detections, sensitiveRegions } back to popup via port
  */
 
-const SERVER_URL    = "http://localhost:3000/analyze";
+import { getBaseServerUrl } from "./serverConfig.js";
+
 const OFFSCREEN_URL = chrome.runtime.getURL("offscreen.html");
 
 const analysisCache = new Map();
@@ -198,9 +199,11 @@ async function runVisionAnalysis(screenshotDataUrl, domRegions, mediaRegions) {
 // sendToServer — POST result to the local Express server (with full HTTP logging)
 // ---------------------------------------------------------------------------
 async function sendToServer(payload) {
-  console.log("[BG] Initiating HTTP request to server URL:", SERVER_URL);
+  const baseUrl = await getBaseServerUrl();
+  const serverUrl = `${baseUrl}/analyze`;
+  console.log("[BG] Initiating HTTP request to server URL:", serverUrl);
   try {
-    const res = await fetch(SERVER_URL, {
+    const res = await fetch(serverUrl, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify(payload),
@@ -511,8 +514,9 @@ chrome.runtime.onConnect.addListener((port) => {
 
       let serverResult;
       try {
-        console.log("[BG] Step 5: Preparing AgentRequestV1 payload for server...");
-        safePost({ type: "STAGE_CHANGE", stage: "send", text: "Sending redacted payload to server (http://localhost:3000/analyze)…" });
+        const activeBaseUrl = await getBaseServerUrl();
+        console.log(`[BG] Step 5: Preparing AgentRequestV1 payload for server (${activeBaseUrl})...`);
+        safePost({ type: "STAGE_CHANGE", stage: "send", text: `Sending redacted payload to server (${activeBaseUrl}/analyze)…` });
 
         console.log("\n========================================================");
         console.log(`[BG][DEBUG] === EXACT dom_summary SENT TO /analyze (${dom_summary.length} items) ===`);
@@ -587,7 +591,7 @@ chrome.runtime.onConnect.addListener((port) => {
         console.error("[BG Error][Step 5: Server Call]:", err);
         let errMsg = err.message || String(err);
         if (errMsg.includes("Failed to fetch") || errMsg.includes("NetworkError") || errMsg.includes("ECONNREFUSED")) {
-          errMsg = "Couldn't reach the reasoning server — is it running on port 3000?";
+          errMsg = `Couldn't reach the reasoning server at ${await getBaseServerUrl()} — please check your connection.`;
         }
         safePost({ type: "ERROR", step: "Server Call", error: errMsg });
         shouldContinue = false;
