@@ -4,8 +4,8 @@ const { execSync } = require("child_process");
 
 const CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const OUTPUT_HTML = path.join(__dirname, "docs", "report_template.html");
-const OUTPUT_PDF_DOCS = path.join(__dirname, "docs", "SIH26171_Technical_Evaluation_Report.pdf");
-const OUTPUT_PDF_ROOT = path.join(__dirname, "SIH26171_Technical_Evaluation_Report.pdf");
+const OUTPUT_PDF_DOCS = path.join(__dirname, "docs", "Technical_Evaluation_Report.pdf");
+const OUTPUT_PDF_ROOT = path.join(__dirname, "Technical_Evaluation_Report.pdf");
 
 const htmlContent = `<!DOCTYPE html>
 <html lang="en">

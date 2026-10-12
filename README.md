@@ -95,7 +95,7 @@ The system enforces a zero-trust, edge-native privacy architecture spanning on-d
 - **Server Reasoning**: Transmits the sanitized frame and structural manifest (`AgentRequestV1`) to the reasoning server (Groq/Gemini/Ollama) to synthesize an action trajectory.
 - **Execution**: The content script executes DOM mutations (typing, clicking, selecting) step-by-step with real-time visual highlights while drawing credentials exclusively from local browser memory.
 
-For an in-depth breakdown of algorithmic design, schema specifications, and security threat models, read the [Technical Solution Whitepaper](solution.md) and review the [Technical Evaluation Report](docs/SIH26171_Technical_Evaluation_Report.pdf).
+For an in-depth breakdown of algorithmic design, schema specifications, and security threat models, read the [Technical Solution Whitepaper](solution.md) and review the [Technical Evaluation Report](docs/Technical_Evaluation_Report.pdf).
 
 ---
 
